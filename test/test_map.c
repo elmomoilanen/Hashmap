@@ -432,6 +432,83 @@ static void test_hashmap_resizing_down() {
     PRINT_SUCCESS(__func__);
 }
 
+static void test_hashmap_removing_and_resizing() {
+    u32 const init_exp = 6;
+    struct HashMap *hashmap = hmap_init(sizeof(test_type_a), init_exp, NULL);
+
+    assert(hashmap != NULL);
+    assert(hashmap->ex_capa == init_exp);
+
+    u32 const elems_orig = 20;
+    u32 elems = elems_orig;
+    for (u32 i=1; i<=elems; ++i) {
+        char key[10];
+        snprintf(key, sizeof key, "%s_%u", "key", i);
+        hmap_insert(hashmap, key, &(test_type_a){.value_x=i, .value_y=i, .text="test"});
+    }
+    assert(hashmap->ex_capa == init_exp);
+    assert(hashmap->occ_slots == elems);
+
+    u32 const elems_rvm = 5;
+    for (u32 j=10; j<10+elems_rvm; ++j) {
+        char key[10];
+        snprintf(key, sizeof key, "%s_%u", "key", j);
+
+        test_type_a *test_struct = hmap_remove(hashmap, key);
+        assert(test_struct != NULL);
+        assert(strcmp(test_struct->text, "test") == 0);
+        assert(test_struct->value_y == (i32)j);
+    }
+    elems -= elems_rvm;
+    assert(hashmap->ex_capa == init_exp - 1);
+    assert(hashmap->occ_slots == elems);
+
+    assert(hmap_remove(hashmap, "key_10") == NULL);
+    assert(hmap_get(hashmap, "key_10") == NULL);
+
+    for (u32 j=1; j<=elems_orig; ++j) {
+        char key[10];
+        snprintf(key, sizeof key, "%s_%u", "key", j);
+
+        if (j >= 10 && j < 10+elems_rvm) {
+            assert(hmap_get(hashmap, key) == NULL);
+            continue;
+        }
+        test_type_a *test_struct = hmap_remove(hashmap, key);
+        assert(test_struct != NULL);
+        assert(strcmp(test_struct->text, "test") == 0);
+        assert(test_struct->value_y == (i32)j);
+    }
+    assert(MAP_INIT_EXP_CAPACITY == init_exp - 2);
+    assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
+    assert(hashmap->occ_slots == 0);
+
+    hmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static void test_hashmap_invalid_keys() {
+    struct HashMap *hashmap = hmap_init_with_key(sizeof(test_type_a), NULL);
+    assert(hashmap != NULL);
+
+    assert(hmap_get(hashmap, NULL) == NULL);
+    assert(hmap_get(hashmap, "this_key_is_too_long") == NULL);
+
+    assert(hmap_remove(hashmap, NULL) == NULL);
+    assert(hmap_remove(hashmap, "this_key_is_too_long") == NULL);
+
+    test_type_a placeholder = {0};
+
+    assert(hmap_insert(hashmap, NULL, &placeholder) == false);
+    assert(hmap_insert(hashmap, "this_key_is_too_long", &placeholder) == false);
+    assert(hmap_insert(hashmap, "valid_key", NULL) == false);
+
+    hmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
 static void test_hashmap_misc_operations_mid_size() {
     u32 const init_exp = 6;
     struct HashMap *hashmap = hmap_init(sizeof(test_type_a), init_exp, NULL);
@@ -593,6 +670,8 @@ test_func map_tests[] = {
     {"hashmap_resizing_up", test_hashmap_resizing_up},
     {"hashmap_resizing_up_and_down", test_hashmap_resizing_up_and_down},
     {"hashmap_resizing_down", test_hashmap_resizing_down},
+    {"hashmap_removing_and_resizing", test_hashmap_removing_and_resizing},
+    {"hashmap_invalid_keys", test_hashmap_invalid_keys},
     {"hashmap_misc_operations_mid_size", test_hashmap_misc_operations_mid_size},
     {"hashmap_integer_data", test_hashmap_integer_data},
     {"hashmap_array_data", test_hashmap_array_data},

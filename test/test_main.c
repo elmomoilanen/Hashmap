@@ -33,14 +33,6 @@ static void run_hashmap_tests() {
     }
 }
 
-static void run_hashset_tests() {
-    test_func *test = &hashset_tests[0];
-
-    for (; test->name; test++) {
-        test->func();
-    }
-}
-
 
 int main() {
     fprintf(stdout, "\nrunning tests...\n\n");
@@ -56,9 +48,6 @@ int main() {
 
     fprintf(stdout, "\nrunning hashmap tests...\n");
     run_hashmap_tests();
-
-    fprintf(stdout, "\nrunning hashset tests...\n");
-    run_hashset_tests();
 
     fprintf(stdout, "\n");
 }
