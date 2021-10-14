@@ -20,8 +20,6 @@
 typedef void (*clean_func_type)(void *);
 
 /*
-struct HashMap
-
 Memory layout: meta data (bucket) | key | user data ... | meta data | key | user data.
 A slot consists of one meta data, key and user data. Hashmap will have N slots,
 2**`MAP_INIT_EXP_CAPACITY` by default and 2**`MAP_MAX_EXP_CAPACITY` at maximum.

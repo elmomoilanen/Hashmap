@@ -3,9 +3,7 @@
 
 
 struct HashMap* hashmap_init(size_t item_size, void (*clean_func)(void *)) {
-    u32 default_init_capa = MAP_INIT_EXP_CAPACITY;
-
-    return hmap_init(item_size, default_init_capa, clean_func);
+    return hmap_init(item_size, MAP_INIT_EXP_CAPACITY, clean_func);
 }
 
 static u32 _get_init_capa(size_t elems) {
@@ -29,22 +27,26 @@ struct HashMap* hashmap_init_with_size(
     return hmap_init(item_size, init_capa, clean_func);
 }
 
-void hashmap_insert() {
-
+bool hashmap_insert(
+    struct HashMap *hashmap,
+    char const *key,
+    void const *data)
+{
+    return hmap_insert(hashmap, key, data);
 }
 
-void hashmap_get() {
-
+void* hashmap_get(struct HashMap *hashmap, char const *key) {
+    return hmap_get(hashmap, key);
 }
 
-void hashmap_remove() {
-
+void* hashmap_remove(struct HashMap *hashmap, char const *key) {
+    return hmap_remove(hashmap, key);
 }
 
-void hashmap_free() {
-
+void hashmap_free(struct HashMap *hashmap) {
+    hmap_free(hashmap);
 }
 
-void hashmap_traverse() {
-
+void hashmap_traverse(struct HashMap *hashmap) {
+    traverse_hashmap_slots(hashmap);
 }

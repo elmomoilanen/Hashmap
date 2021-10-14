@@ -239,11 +239,11 @@ static void _clean_hashmap_slots(struct HashMap *hashmap) {
         }
     }
     free(hashmap->slots);
-    free(hashmap->_temp);
 }
 
 static void _hmap_free(struct HashMap *hashmap) {
     _clean_hashmap_slots(hashmap);
+    free(hashmap->_temp);
     free(hashmap);
 }
 
@@ -252,6 +252,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
     if (new_hashmap == NULL) {
         return false;
     }
+    // new_hashmap: slot count updated but the size of one slot remained the same 
 
     u32 const current_capacity = 1U << hashmap->ex_capa;
     u32 const new_mask = (1U << new_hashmap->ex_capa) - 1;
@@ -298,14 +299,15 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
             idx = (idx + 1) & new_mask;
         }
     }
+    // clean slots in the previous hashmap but keep its _temp content (hmap_remove needs this)
     _clean_hashmap_slots(hashmap);
-
+    // set new hashmap slots to old, slot size is the same but their count differ
     hashmap->slots = new_hashmap->slots;
-    hashmap->_temp = new_hashmap->_temp;
     hashmap->ex_capa = new_hashmap->ex_capa;
-    memset(hashmap->_temp, 0, MAP_TEMP_SLOTS * hashmap->sz_slot);
 
+    free(new_hashmap->_temp);
     free(new_hashmap);
+
     return true;
 }
 
