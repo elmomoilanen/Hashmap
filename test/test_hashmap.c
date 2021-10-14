@@ -11,6 +11,12 @@ struct Measurement {
     bool normal;
 };
 
+typedef struct {
+    i32 x;
+    i32 y;
+    bool found;
+} i32_pair;
+
 
 static void test_complete_hashmap() {
     size_t const type_size = sizeof(struct Measurement);    
@@ -146,10 +152,61 @@ static void test_complete_hashmap_oversize_init() {
     PRINT_SUCCESS(__func__);
 }
 
+static i32_pair find_pair_that_sum_to_specific_target(i32 *array, u32 arr_len, i32 target) {
+    struct HashMap *hashmap = hashmap_init_with_size(sizeof *array, arr_len, NULL);
+    assert(hashmap != NULL);
+
+    i32_pair pair = {0};
+    pair.found = false;
+    i32 placeholder = 0;
+
+    for (u32 j=0; j<arr_len; ++j) {
+        i32 num = array[j];
+        i32 search_num = target - num;
+
+        i32 const buf_size = snprintf(NULL, 0, "%d", search_num);
+        char *search_key = calloc(1, buf_size + 1);
+        snprintf(search_key, buf_size + 1, "%d", search_num);
+
+        if (hashmap_get(hashmap, search_key) == NULL) {
+            i32 const buf_size2 = snprintf(NULL, 0, "%d", num);
+            char *key = calloc(1, buf_size2 + 1);
+            snprintf(key, buf_size2 + 1, "%d", num);
+            hashmap_insert(hashmap, key, &placeholder);
+            free(key);
+        } else {
+            pair.x = num;
+            pair.y = search_num;
+            pair.found = true;
+            free(search_key);
+            break;
+        }
+        free(search_key);
+    }
+    hashmap_free(hashmap);
+
+    return pair;
+}
+
+static void test_hashmap_usage_in_search_algorithm() {
+    i32 array[] = {-1, -11, 2, 3, -2, -1, 0, 1, -7, 3};
+    u32 const arr_size = sizeof(array) / sizeof(array[0]);
+
+    // check whether there are array elements for which the sum equals -11
+    i32_pair result = find_pair_that_sum_to_specific_target(array, arr_size, -11);
+
+    assert(result.found == true);
+    assert(result.x == 0);
+    assert(result.y == -11);
+
+    PRINT_SUCCESS(__func__);
+}
+
 
 test_func hashmap_tests[] = {
     {"complete_hashmap", test_complete_hashmap},
     {"complete_hashmap_mid_size", test_complete_hashmap_mid_size},
     {"complete_hashmap_oversize_init", test_complete_hashmap_oversize_init},
+    {"hashmap_usage_in_search_algorithm", test_hashmap_usage_in_search_algorithm},
     {NULL, NULL},
 };
