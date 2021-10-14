@@ -56,10 +56,11 @@
     (META_SET_PSL((meta_data), META_GET_PSL((meta_data)) - 1U))
 
 /*
-* Total bit count of struct `Bucket`, `BUCKET_TOTAL_BITS`, must be compatible with the u32 type
-* LSB bit is the "taken" value, 0 if bucket is free and 1 if taken
-* Following `BUCKET_PSL_BITS` bits are reserved for the probe sequence length value
-* Last `BUCKET_HASH_BITS` bits are reserved for the (truncated) hash value
+Total bit count of struct `Bucket`, `BUCKET_TOTAL_BITS`, must be compatible with the u32 type
+
+LSB bit is the "taken" value, 0 if bucket is free and 1 if taken
+Following `BUCKET_PSL_BITS` bits are reserved for the probe sequence length value
+Last `BUCKET_HASH_BITS` bits are reserved for the (truncated) hash value
 */
 struct Bucket {
     u32 meta_data;

@@ -9,6 +9,13 @@ typedef struct {
 } test_type_a;
 
 
+struct vector {
+    i32 *data;
+    u32 size;
+    u32 capacity;
+};
+
+
 static void test_value_set_macro_lsb() {
     u32 const offset = 0x0u;
     u32 const mask = 0x1u;
@@ -499,6 +506,73 @@ static void test_hashmap_integer_data() {
     PRINT_SUCCESS(__func__);
 }
 
+static void test_hashmap_array_data() {
+    u32 const elems = 15;
+    i32 *arr = calloc(elems, sizeof *arr);
+    assert(arr != NULL);
+
+    i32 *arr2 = calloc(elems, sizeof *arr2);
+    assert(arr2 != NULL);
+
+    for (u32 i=0; i<elems; ++i) arr[i] = 1;
+    for (u32 i=0; i<elems; ++i) arr2[i] = -1;
+
+    struct HashMap *hashmap = hmap_init_with_key(elems * sizeof *arr, NULL);
+    assert(hashmap != NULL);
+
+    assert(hmap_insert(hashmap, "key", arr) == true);
+    assert(hmap_insert(hashmap, "key2", arr2) == true);
+    assert(hashmap->occ_slots == 2);
+
+    i32 *arr_back = hmap_get(hashmap, "key");
+    assert(arr_back != NULL);
+    for (u32 i=0; i<elems; ++i) assert(arr_back[i] == 1);
+
+    assert(hmap_remove(hashmap, "key") != NULL);
+
+    i32 *arr2_back = hmap_get(hashmap, "key2");
+    assert(arr2_back != NULL);
+    for (u32 i=0; i<elems; ++i) assert(arr2_back[i] == -1);
+
+    hmap_free(hashmap);
+
+    free(arr);
+    free(arr2);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static void test_hashmap_custom_allocation() {
+    struct vector *vec = malloc(1 * sizeof *vec);
+    assert(vec != NULL);
+
+    u32 const data_size = 25;
+    vec->data = malloc(data_size * sizeof(*vec->data));
+    assert(vec->data != NULL);
+
+    vec->capacity = data_size * 2;
+    vec->size = data_size;
+    for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
+
+    struct HashMap *hashmap = hmap_init_with_key(sizeof *vec, NULL);
+    assert(hashmap != NULL);
+
+    assert(hmap_insert(hashmap, "key", vec) == true);
+    assert(hashmap->occ_slots == 1);
+
+    struct vector *vec_back = hmap_get(hashmap, "key");
+    assert(vec_back != NULL);
+    assert(vec_back->size == data_size);
+    for (i32 i=0; i<(i32)vec_back->size; ++i) assert(vec_back->data[i] == i);
+
+    hmap_free(hashmap);
+
+    free(vec->data);
+    free(vec);
+
+    PRINT_SUCCESS(__func__);
+}
+
 
 test_func map_tests[] = {
     {"value_set_macro_lsb", test_value_set_macro_lsb},
@@ -521,5 +595,7 @@ test_func map_tests[] = {
     {"hashmap_resizing_down", test_hashmap_resizing_down},
     {"hashmap_misc_operations_mid_size", test_hashmap_misc_operations_mid_size},
     {"hashmap_integer_data", test_hashmap_integer_data},
+    {"hashmap_array_data", test_hashmap_array_data},
+    {"hashmap_custom_allocation", test_hashmap_custom_allocation},
     {NULL, NULL},
 };

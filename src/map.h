@@ -36,7 +36,7 @@ sz_item: data size, defined at initialization.
 sz_slot: slot size in bytes (a slot is given by one meta data, key and user data items).
 slots: starting address for the slots.
 _temp: starting address for the garbage data used internally by the hashmap
-    (user won't need for anything and shouldn't access it).
+    (a user won't need for anything and shouldn't access it).
 clean_func: a function (pointer) doing necessary cleaning for user data. By default,
     this will be internally NULL and the hashmap will use basic `free` to do clean up.
     Pass this as a argument when initializing hashmap if needed.
