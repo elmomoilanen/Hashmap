@@ -1,8 +1,8 @@
 # Hashmap #
 
-Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as a collision resolution strategy. Uses C-style strings as keys that are internally mapped to the data via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information. Size of the keys is restricted to 19 bytes, the 20th byte being reserved internally for the null character. Reason for this choice is that the library is mainly designed for small scale needs and long keys would seem redundant with respect to this purpose. Underlying memory layout for the hashmap can also be tighter when allowing keys sizes only up to a specific boundary. This memory layout is formed by slots that each have four first bytes for meta data, following 20 bytes for the key and the next x bytes for the data. Slot count (i.e., capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that this library is not thread-safe and thus should not be used with multi-threaded code.
+Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as a collision resolution strategy. Library uses strings as keys that are internally mapped to the data via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information of this hashing. Size of the keys is restricted to 19 bytes, the 20th byte being reserved internally for the null character. Reason for this choice is that the library is mainly designed for small scale needs and long keys would seem redundant with respect to this purpose. Underlying memory layout for the hashmap can also be tighter when allowing key sizes only up to a specific boundary. This memory layout is formed by slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key and the next x bytes for one data item which size must be known when initialising the hashmap in the first place. Slot count (i.e., capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions but these are checked when needed and they shouldn't restrict too much if any the user experience, see the *usage* below for more information. Notice also that this library is not thread-safe and thus shouldn't be used with multi-threaded code.
 
-Precise memory layout for one slot: meta data (4 bytes; 1 bit to mark whether slot is reserved, 11 bits for probe sequence length and 20 bits for truncated hash value) | key (20 bytes) | data (x byte). Meta data is implemented as a normal unsigned int data type and specific bits inside it are modified by bitwise operations.
+Precise memory layout for one slot: meta data (4 bytes; 1 bit to mark whether the slot is reserved, 11 bits for probe sequence length and 20 bits for truncated hash value) | key (20 bytes) | data (x byte). Meta data is implemented as a normal unsigned int data type and specific bits inside it are modified by bitwise operations.
 
 ## Build ##
 
@@ -12,7 +12,69 @@ Following shell command builds the library, runs unit tests and lastly cleans up
 ```bash
 make && make test && make clean
 ```
-On a successful build, the static library file `libhashmap.a` is formed in this level of the folder.
+On a successful build, the static library file `libhashmap.a` is formed in this level of the folder. Header file `include/hashmap.h` defines public APIs for the library.
 
 ## Usage ##
 
+Indicate to the compiler the include path (-I) for the header file `include/hashmap.h` and library path (-L) and name (-l) for the static library file `libhashmap.a`. E.g. the following shell command
+
+```bash
+gcc test_prog.c -I./include -L. -lhashmap -o test_prog -Wall -Wextra -Werror -std=c11 -g
+```
+
+would compile a `test_prog.c` source code file that uses the hashmap library. Contents of this source code file could be e.g. the following
+
+```C
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+
+#include "hashmap.h"
+
+typedef unsigned int u32;
+typedef float f32;
+
+struct Temperature {
+    f32 kelvin;
+    u32 hour;
+    u32 mins;
+}
+
+
+int main() {
+    // create a hashmap with default init size 16 open slots and no specific clean up function (hence pass NULL)
+    struct HashMap *hashmap = hashmap_init(sizeof(struct Temperature), NULL);
+
+    struct Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
+    struct Temperature temp_28 = {.kelvin=298.15, .hour=12, .mins=0};
+
+    // insert temperature data (pointer to it) to hashmap, using dates as keys
+    hashmap_insert(hashmap, "1.8.2021", &temp_18);
+    hashmap_insert(hashmap, "2.8.2021", &temp_28);
+
+    // ...
+
+    // get some data and check that it has remained correct
+    struct Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
+    assert(t_18->kelvin - temp_18.kelvin < 0.01);
+
+    // remove the same data from the hashmap (ignore return value for now)
+    hashmap_remove(hashmap, "1.8.2021");
+
+    // data not there anymore
+    assert(hashmap_get(hashmap, "1.8.2021") == NULL);
+
+    // clean up memory used by the hashmap struct
+    hashmap_free(hashmap);
+}
+
+```
+
+Here is a short summary for some important details related to the hashmap:
+
+- initialise a new hashmap with default size by `hashmap_init` and by `hashmap_init_with_size` to meet some init size requirement
+- pass the size of one data item as an argument when initialising the hashmap and this must not exceed approx 2^32 bytes
+- pass a custom clean up function if some specific memory clean up is needed when calling `hashmap_free`
+- hashmap struct has upper bound for its capacity but this bound is over one million slots
+- capacity increases exponentially (powers of two) if the load factor increases over 90 %
+- if the load factor falls below 40 %, the capacity is shrunk

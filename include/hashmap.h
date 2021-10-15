@@ -16,6 +16,10 @@ where the number inside the brackets represents a slot number, which in the defa
 case of 16 storage slots goes from 0 to 15. Size of one (user) data item must be known
 when initialising the hashmap and kept the same during usage of the same hashmap struct.
 
+Meta data consumes 4 bytes each, a key 20 bytes and the user data x bytes. Size of one user
+data item is restricted approx below 2^32 bytes. Also the slot count cannot exceed the
+upper bound of 2^20 slots.
+
 Params:
     item_size, size of one (user) data item
     clean_func, a function pointer if a custom clean up functionality is needed.
@@ -30,13 +34,6 @@ struct HashMap* hashmap_init(size_t item_size, void (*clean_func)(void *));
 
 /*
 Initialise a new hashmap struct to a specific size.
-
-HashMap struct uses internally the following memory layout:
-(0) meta data (bucket) | key | user data ... (N) meta data (bucket) | key | user data,
-where the number inside the brackets represents a slot number. The count of needed
-slots is determined internally related to the argument `elems` but the slot count
-will always be a some power of two. Size of one (user) data item must be known 
-when initialising the hashmap and kept the same during usage of the same hashmap struct.
 
 This is convenient (more so than the `hashmap_init`) if the user wants straight from
 the start a specific storage count for the hashmap, e.g. the user would like to
@@ -102,7 +99,7 @@ Returns:
 void* hashmap_remove(struct HashMap *hashmap, char const *key);
 
 /*
-Clean up the used memory of the hashmap.
+Clean up memory used by the hashmap.
 
 Params:
     hashmap, the HashMap struct
