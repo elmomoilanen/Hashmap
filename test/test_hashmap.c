@@ -17,6 +17,12 @@ typedef struct {
     bool found;
 } i32_pair;
 
+typedef struct {
+    f32 kelvin;
+    u32 hour;
+    u32 mins;
+} Temperature;
+
 
 static void test_complete_hashmap() {
     size_t const type_size = sizeof(struct Measurement);    
@@ -202,11 +208,44 @@ static void test_hashmap_usage_in_search_algorithm() {
     PRINT_SUCCESS(__func__);
 }
 
+static void test_hashmap_readme_example() {
+    struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
+
+    Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
+    Temperature temp_28 = {.kelvin=298.15, .hour=12, .mins=0};
+
+    assert(hashmap_insert(hashmap, "1.8.2021", &temp_18) == true);
+    assert(hashmap_insert(hashmap, "2.8.2021", &temp_28) == true);
+
+    Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
+    assert(t_18 != NULL);
+    assert(t_18->kelvin - temp_18.kelvin < 0.01);
+    assert(t_18->hour == 12);
+    assert(t_18->mins == 0);
+
+    assert(hashmap_remove(hashmap, "1.8.2021") != NULL);
+    assert(hashmap_get(hashmap, "1.8.2021") == NULL);
+
+    Temperature *t_28 = hashmap_get(hashmap, "2.8.2021");
+    assert(t_28 != NULL);
+    assert(t_28->kelvin - temp_28.kelvin < 0.01);
+    assert(t_28->hour == 12);
+    assert(t_28->mins == 0);
+
+    assert(hashmap_remove(hashmap, "2.8.2021") != NULL);
+    assert(hashmap_get(hashmap, "2.8.2021") == NULL);
+    
+    hashmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
 
 test_func hashmap_tests[] = {
     {"complete_hashmap", test_complete_hashmap},
     {"complete_hashmap_mid_size", test_complete_hashmap_mid_size},
     {"complete_hashmap_oversize_init", test_complete_hashmap_oversize_init},
     {"hashmap_usage_in_search_algorithm", test_hashmap_usage_in_search_algorithm},
+    {"hashmap_readme_example", test_hashmap_readme_example},
     {NULL, NULL},
 };

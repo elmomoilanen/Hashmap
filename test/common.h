@@ -18,6 +18,9 @@ typedef uint32_t u32;
 typedef int64_t i64;
 typedef uint64_t u64;
 
+typedef float f32;
+typedef double f64;
+
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
