@@ -108,7 +108,8 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
         }
         init_success = false;
     }
-    else if (result != buflen) {
+    // buflen is some small positive number (from 1 to MAP_MAX_RAND_BUF_LEN)
+    else if (result != (ssize_t)buflen) {
         // should never end up here
         fprintf(stderr, "received less random bytes than requested.\n");
         init_success = false;

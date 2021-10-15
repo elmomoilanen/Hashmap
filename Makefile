@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Werror -std=c11 -g -O3
+CFLAGS=-Wall -Wno-implicit-fallthrough -Wextra -Werror -std=c11 -g -O3
 
 SRC=src/siphash.c src/map.c src/hashmap.c
 OBJS=siphash.o map.o hashmap.o
