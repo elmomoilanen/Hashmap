@@ -12,9 +12,11 @@ Following shell command builds the library, runs unit tests and lastly cleans up
 ```bash
 make && make test && make clean
 ```
-On a successful build, the static library file `libhashmap.a` is formed in this level of the folder. Header file `include/hashmap.h` defines public APIs for the library.
+On a successful build, the static library file `libhashmap.a` is formed in this level of the folder.
 
 ## Usage ##
+
+Header file `include/hashmap.h` defines public APIs for the library.
 
 Indicate to the compiler the include path (-I) for the header file `include/hashmap.h` and library path (-L) and name (-l) for the static library file `libhashmap.a`. E.g. the following shell command
 
@@ -51,6 +53,11 @@ int main() {
     // insert temperature data (pointer to it) to hashmap, using dates as keys
     hashmap_insert(hashmap, "1.8.2021", &temp_18);
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
+
+    // show some internal hashmap statistics, members of the hashmap struct aren't directly accessible
+    // e.g. the load factor would be 2/16 at this point
+    hashmap_stats(hashmap);
+    hashmap_traverse(hashmap);
 
     // ...
 

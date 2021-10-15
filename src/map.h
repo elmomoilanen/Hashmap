@@ -60,7 +60,7 @@ bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 void* hmap_remove(struct HashMap *hashmap, char const *key);
 
 void traverse_hashmap_slots(struct HashMap *hashmap);
-
+void hmap_show_stats(struct HashMap *hashmap);
 
 // Following are meant only for testing hashmap
 

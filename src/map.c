@@ -559,12 +559,18 @@ u32 get_occupied_slot_count(struct HashMap *hashmap) {
     return occupied;
 }
 
-void traverse_hashmap_slots(struct HashMap *hashmap) {
+void hmap_show_stats(struct HashMap *hashmap) {
     u32 const total_capacity = 1U << hashmap->ex_capa;
 
     fprintf(stdout, "Total capacity: %u\n", total_capacity);
-    fprintf(stdout, "Occupied slots: %u\n\n", hashmap->occ_slots);
+    fprintf(stdout, "Occupied slots: %u\n", hashmap->occ_slots);
     fprintf(stdout, "Slot size in bytes: %u\n", hashmap->sz_slot);
+    fprintf(stdout, "Load factor: %.2f\n\n", (f32)hashmap->occ_slots / total_capacity);
+}
+
+void traverse_hashmap_slots(struct HashMap *hashmap) {
+    hmap_show_stats(hashmap);
+    u32 const total_capacity = 1U << hashmap->ex_capa;
 
     for (u32 j=0; j<total_capacity; ++j) {
         struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);

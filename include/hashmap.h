@@ -117,5 +117,13 @@ Params:
 */
 void hashmap_traverse(struct HashMap *hashmap);
 
+/*
+Print hashmap internal statistics, e.g. the load factor.
+
+Params:
+    hashmap, the HashMap struct
+*/
+void hashmap_stats(struct HashMap *hashmap);
+
 
 #endif /* __HASHMAP__ */
