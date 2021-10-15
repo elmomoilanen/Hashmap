@@ -1,0 +1,27 @@
+name: main
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: macos-latest
+          COMPILER: clang
+          
+        - os: ubuntu-latest
+          COMPILER: gcc
+          
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      shell: bash
+      run: make CC=${{ matrix.COMPILER }}
+    - name: Test
+      shell: bash
+      run: make test
+    - name: Clean
+      shell: bash
+      run: make clean
