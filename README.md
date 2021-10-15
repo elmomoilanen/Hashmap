@@ -44,7 +44,6 @@ typedef struct {
     u32 mins;
 } Temperature;
 
-
 int main() {
     // using default init size, 16 open slots and no specific clean up function (hence pass NULL)
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
@@ -53,37 +52,33 @@ int main() {
     Temperature temp_28 = {.kelvin=298.15, .hour=12, .mins=0};
 
     // insert temperature data (pointer to it) to hashmap, using dates as keys
+    // for every insertion, hashmap makes itself a copy of the data 
     hashmap_insert(hashmap, "1.8.2021", &temp_18);
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
 
-    // show some internal hashmap statistics, members of the hashmap struct aren't directly accessible
-    // e.g. the load factor would be 2/16 at this point
+    // show some internal hashmap statistics, e.g. the load factor would be 2/16 at this point
     hashmap_stats(hashmap);
     hashmap_traverse(hashmap);
 
-    // ...
-
-    // get some data and check that it has remained correct
+    // get data (reference) back from hashmap and check that it has remained correct
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
     assert(t_18->kelvin - temp_18.kelvin < 0.01);
 
     // remove the same data from the hashmap (ignore return value for now)
     hashmap_remove(hashmap, "1.8.2021");
-
-    // data not there anymore
+    
     assert(hashmap_get(hashmap, "1.8.2021") == NULL);
 
     // clean up memory used by the hashmap struct
     hashmap_free(hashmap);
 }
-
 ```
 
 Here is a short summary for some important details related to this hash map implementation:
 
-- new hashmap can be initialised to default size by `hashmap_init` and by `hashmap_init_with_size` to meet some initial size requirement
+- new hashmap can be initialised to default size by `hashmap_init` or to meet some initial size requirement by `hashmap_init_with_size`
 - size of one data item is passed as an argument when initialising the hashmap and this must not exceed approx 2^32 bytes
 - custom clean up function can be passed when initialising if specific memory clean up is needed when calling later `hashmap_free`
 - hashmap struct has an upper bound for its capacity but this bound is over one million slots
-- capacity increases exponentially (powers of two) if the load factor increases over 90 %
-- if the load factor falls below 40 %, the capacity is shrunk
+- capacity will grow exponentially (powers of two) if the load factor increases over 90 %
+- if the load factor falls below 40 %, the capacity will shrink
