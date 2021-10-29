@@ -16,19 +16,19 @@ Following shell command builds the library, runs unit tests and lastly cleans up
 ```bash
 make && make test && make clean
 ```
-On a successful build, the static library file `libhashmap.a` is formed in this level of the folder.
+On a successful build, the static library file *libhashmap.a* is formed in this level of the folder.
 
 ## Usage ##
 
-Header file `include/hashmap.h` defines public APIs for the library.
+Header file *include/hashmap.h* defines public APIs for the library.
 
-Indicate to the compiler the include path (-I) for the header file `include/hashmap.h` and library path (-L) and name (-l) for the static library file `libhashmap.a`. E.g. the following shell command
+Indicate to the compiler the include path (-I) for the header file *hashmap.h* and library path (-L) and name (-l) for the static library file *libhashmap.a*. E.g. the following shell command
 
 ```bash
 gcc test_prog.c -I./include -L. -lhashmap -o test_prog -Wall -Wextra -Werror -std=c11 -g
 ```
 
-would compile a `test_prog.c` source code file that uses the hashmap library. Contents of this source code file could be e.g. the following
+would compile a *test_prog.c* source code file that uses the hashmap library. Contents of this source code file could be e.g. the following
 
 ```C
 #include <stdlib.h>
