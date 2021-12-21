@@ -61,9 +61,11 @@ Size of the key is restricted and the insertion will fail (return false) if the
 used key is too large. It's recommended that the key consists only of characters
 that consume one byte of memory (ascii characters).
 
+For every insertion, the hash map makes itself a copy of the passed data and key.
+
 Params:
     hashmap, the HashMap struct
-    key, string type key for which the passed data will be mapped
+    key, string type key for which the passed data will be mapped to
     data, a pointer to the data item
 
 Returns:
@@ -73,6 +75,10 @@ bool hashmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 
 /*
 Get data from the hashmap.
+
+Returned data will be a reference to data that was copied and stored to the hash map
+during a previous insertion operation. This reference has a lifetime until the data is
+removed from the hash map or the whole hash map is deleted from memory.
 
 Params:
     hashmap, the HashMap struct
@@ -86,6 +92,11 @@ void* hashmap_get(struct HashMap *hashmap, char const *key);
 
 /*
 Remove data from the hashmap.
+
+Data mapped to by the provided key will be removed if found from the hash map.
+If the data is found, also a reference to it is returned as a response though
+the reference points to a temporary location (used internally by the hash map struct)
+which lifetime ends upon the next hash map operation call.
 
 Params:
     hashmap, the HashMap struct
@@ -118,7 +129,10 @@ Params:
 void hashmap_traverse(struct HashMap *hashmap);
 
 /*
-Print hashmap internal statistics, e.g. the load factor.
+Print hashmap internal statistics.
+
+For this call current total capacity, occupied slot count,
+size of each slot and the load factor (occupied slots / total capacity) are printed to stdout
 
 Params:
     hashmap, the HashMap struct
