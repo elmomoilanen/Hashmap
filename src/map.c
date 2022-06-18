@@ -569,7 +569,6 @@ void hmap_show_stats(struct HashMap *hashmap) {
 }
 
 void traverse_hashmap_slots(struct HashMap *hashmap) {
-    hmap_show_stats(hashmap);
     u32 const total_capacity = 1U << hashmap->ex_capa;
 
     for (u32 j=0; j<total_capacity; ++j) {

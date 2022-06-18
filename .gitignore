@@ -2,4 +2,6 @@
 *.a
 
 test_main
-test_prog.c
+test_prog*
+
+.vscode

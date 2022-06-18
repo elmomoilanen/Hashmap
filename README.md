@@ -4,7 +4,9 @@
 
 Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as a collision resolution strategy. Library uses strings as keys that are internally mapped to the data via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
 
-Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that the library is targeted mainly for small scale needs and long keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary. This memory layout is formed by so called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for one actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *usage* section below for more information on these limitations. Notice also that this library is not thread-safe and thus shouldn't be used with multi-threaded code.
+Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that the library is targeted mainly for small scale needs and longer allowed keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary.
+
+Memory layout is formed by so called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and thus shouldn't be used with multi-threaded code.
 
 Precise memory layout for one slot is following: meta data (4 bytes in total; 1 bit to mark whether the slot is reserved, 11 bits for probe sequence length (PSL) and 20 bits for truncated hash value) | key (20 bytes, last byte always reserved for the null character) | data (x bytes, x determined at initialisation). Meta data is implemented as a normal unsigned integer data type and the specific bits inside it are modified by bitwise operations. As the maximal capacity of the hash map is limited, 11 bits for PSL and 20 bits for hash are sufficient.
 
@@ -22,7 +24,7 @@ On a successful build, the static library file *libhashmap.a* is formed in this 
 
 Header file *include/hashmap.h* defines public APIs for the library.
 
-Indicate to the compiler the include path (-I) for the header file *hashmap.h* and library path (-L) and name (-l) for the static library file *libhashmap.a*. E.g. the following shell command
+Indicate to compiler the include path (-I) for the header file *hashmap.h* and library path (-L) and name (-l) for the static library file *libhashmap.a*. E.g. the following shell command
 
 ```bash
 gcc test_prog.c -I./include -L. -lhashmap -o test_prog -Wall -Wextra -Werror -std=c11 -g
@@ -58,7 +60,7 @@ int main() {
     hashmap_insert(hashmap, "1.8.2021", &temp_18);
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
 
-    // show some internal hashmap statistics, e.g. the load factor would be 2/16 at this point
+    // print some internal hashmap statistics to stdout, e.g. the load factor is 2/16
     hashmap_stats(hashmap);
     hashmap_traverse(hashmap);
 
@@ -76,7 +78,38 @@ int main() {
 }
 ```
 
-Here is a short summary for some of the most important details related to this hash map implementation:
+In this case, output of the function call *hashmap_stats* will be the following
+
+```
+Total capacity: 16
+Occupied slots: 2
+Slot size in bytes: 40
+Load factor: 0.12
+```
+
+and for *hashmap_traverse* resulted output could start e.g. as follows (showing only the first five buckets of the total 16)
+
+```
+Bucket address: 0x130e043c0
+Bucket is free
+Bucket address: 0x130e043e8
+Bucket is free
+Bucket address: 0x130e04410
+Bucket taken, psl == 0
+Key: 1.8.2021
+Bucket address: 0x130e04438
+Bucket taken, psl == 1
+Key: 2.8.2021
+Bucket address: 0x130e04460
+Bucket is free
+...
+```
+
+Here it's seen that a collision occurred for the key "2.8.2021" and hence it was inserted to the next available slot.
+
+## API summary ##
+
+Here is a short summary for some of the most important details related to this implementation:
 
 - initialise a new hash map by calling `hashmap_init` or `hashmap_init_with_size`
 
@@ -100,4 +133,4 @@ Here is a short summary for some of the most important details related to this h
     
 - clean up used memory of the hash map by `hashmap_free`
 
-See the *hashmap.h* header file for more precise introductions of the public APIs.
+See the *hashmap.h* header file for more information.
