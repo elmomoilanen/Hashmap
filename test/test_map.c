@@ -644,6 +644,85 @@ static void test_hashmap_custom_allocation() {
 
     hmap_free(hashmap);
 
+    // hmap_free did not follow vec->data as it shouldn't in this case
+    free(vec->data);
+    free(vec);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static u8 custom_clean_vec_call_counter = 0;
+
+void custom_clean_vec(void *data_item) {
+    // following condition check is mandatory
+    if (((struct vector *)data_item)->data) {
+        custom_clean_vec_call_counter += 1;
+        free(((struct vector *)data_item)->data);
+    }
+}
+
+static void test_hashmap_custom_allocation_and_free() {
+    struct vector *vec = malloc(1 * sizeof *vec);
+    assert(vec != NULL);
+
+    u32 const data_size = 5;
+    vec->data = malloc(data_size * sizeof(*vec->data));
+    assert(vec->data != NULL);
+
+    vec->capacity = data_size * 2;
+    vec->size = data_size;
+    for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
+
+    // pass a custom clean up function
+    struct HashMap *hashmap = hmap_init_with_key(sizeof *vec, custom_clean_vec);
+    assert(hashmap != NULL);
+
+    assert(hmap_insert(hashmap, "key_to_vec", vec) == true);
+    assert(hashmap->occ_slots == 1);
+
+    assert(custom_clean_vec_call_counter == 0);
+
+    hmap_free(hashmap);
+
+    // check that the custom clean up was really called
+    assert(custom_clean_vec_call_counter == 1);
+
+    // hmap_free followed vec->data and freed it, must not free it anymore
+    free(vec);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static void test_hashmap_custom_allocation_with_remove() {
+    struct vector *vec = malloc(1 * sizeof *vec);
+    assert(vec != NULL);
+
+    u32 const data_size = 3;
+    vec->data = malloc(data_size * sizeof(*vec->data));
+    assert(vec->data != NULL);
+
+    vec->capacity = data_size * 2;
+    vec->size = data_size;
+    for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
+
+    custom_clean_vec_call_counter = 0;
+
+    // pass a custom clean up function
+    struct HashMap *hashmap = hmap_init_with_key(sizeof *vec, custom_clean_vec);
+    assert(hashmap != NULL);
+
+    assert(hmap_insert(hashmap, "again_key_to_vec", vec) == true);
+    assert(hashmap->occ_slots == 1);
+
+    assert(hmap_remove(hashmap, "again_key_to_vec") != NULL);
+
+    assert(custom_clean_vec_call_counter == 0);
+    hmap_free(hashmap);
+
+    // there shouldn't been clean up call as the remove operation was called before
+    assert(custom_clean_vec_call_counter == 0);
+
+    // it's our responsibility to clean the data
     free(vec->data);
     free(vec);
 
@@ -676,5 +755,7 @@ test_func map_tests[] = {
     {"hashmap_integer_data", test_hashmap_integer_data},
     {"hashmap_array_data", test_hashmap_array_data},
     {"hashmap_custom_allocation", test_hashmap_custom_allocation},
+    {"test_hashmap_custom_allocation_and_free", test_hashmap_custom_allocation_and_free},
+    {"test_hashmap_custom_allocation_with_remove", test_hashmap_custom_allocation_with_remove},
     {NULL, NULL},
 };

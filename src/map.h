@@ -21,23 +21,24 @@ typedef void (*clean_func_type)(void *);
 
 /*
 Memory layout: meta data (bucket) | key | user data ... | meta data | key | user data.
-A slot consists of one meta data, key and user data. Hashmap will have N slots,
-2**`MAP_INIT_EXP_CAPACITY` by default and 2**`MAP_MAX_EXP_CAPACITY` at maximum.
-Meta data structs are fixed to 4 bytes and key (the key which the end user uses to 
-map the data) to `MAP_MAX_KEY_BYTES`.
 
-ex_capa: the power (exponent) of two which gives the total capacity.
-occ_slots: occupied slots.
+A slot consists of one meta data unit, key and user data item. Hash map will have 
+N slots, 2**`MAP_INIT_EXP_CAPACITY` by default and 2**`MAP_MAX_EXP_CAPACITY` at max.
+Meta data structs are fixed to 4 bytes and key (which the end user uses to map to 
+the data) to `MAP_MAX_KEY_BYTES`.
+
+Members of the HashMap struct:
+
+ex_capa: exponent for the power of two which gives the total capacity.
+occ_slots: count of occupied slots.
 sz_bucket: size of the meta data struct in bytes.
 sz_key: maximal size of the key in bytes (null terminator must be included for this size).
 sz_item: data size, defined at initialization.
-sz_slot: slot size in bytes (a slot is given by one meta data, key and user data items).
+sz_slot: slot size in bytes (a slot is given by one meta data unit, key and user data item).
 slots: starting address for the slots.
-_temp: starting address for the garbage data used internally by the hashmap
-    (a user won't need for anything and shouldn't access it).
+_temp: starting address for the garbage data used internally by the hash map
 clean_func: a function (pointer) doing necessary cleaning for user data. By default,
     this will be internally NULL and the hashmap will use basic `free` to do clean up.
-    Pass this as a argument when initializing hashmap if needed.
 */
 struct HashMap {
     u32 ex_capa;
@@ -62,7 +63,7 @@ void* hmap_remove(struct HashMap *hashmap, char const *key);
 void traverse_hashmap_slots(struct HashMap *hashmap);
 void hmap_show_stats(struct HashMap *hashmap);
 
-// Following are meant only for testing hashmap
+// Following are meant only for testing hash map
 
 bool get_random_key(u8 *buffer, size_t buffer_len);
 struct HashMap* hmap_init_with_key(size_t item_size, void (*clean_func)(void *));

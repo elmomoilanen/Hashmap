@@ -77,7 +77,7 @@ static void _clean_up(u32 allocs, void *ptr, ...) {
 
     for (u32 i=1; i<allocs; ++i) {
         void *p = va_arg(args, void *);
-        if (p) free(p);
+        if (p != NULL) free(p);
     }
 
     va_end(args);
@@ -165,7 +165,7 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     struct HashMap *hashmap = calloc(1, sizeof *hashmap);
 
     if (hashmap == NULL) {
-        fprintf(stderr, "failed to allocate memory for the hashmap struct.\n");
+        fprintf(stderr, "failed to allocate memory for the hash map struct.\n");
         return NULL;
     }
 
@@ -175,7 +175,7 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     hashmap->slots = calloc(init_slot_count, hashmap->sz_slot);
 
     if (hashmap->slots == NULL) {
-        fprintf(stderr, "failed to allocate memory for the hashmap slots.\n");
+        fprintf(stderr, "failed to allocate memory for the hash map slots.\n");
         free(hashmap);
         return NULL;
     }
@@ -183,7 +183,7 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     hashmap->_temp = calloc(MAP_TEMP_SLOTS, hashmap->sz_slot);
 
     if (hashmap->_temp == NULL) {
-        fprintf(stderr, "failed to allocate backup memory for the hashmap.\n");
+        fprintf(stderr, "failed to allocate backup memory for the hash map.\n");
         _clean_up(MAP_TEMP_SLOTS, hashmap->slots, hashmap);
         return NULL;
     }
@@ -227,7 +227,7 @@ static void _clean_hashmap_slots(struct HashMap *hashmap) {
     clean_func_type clean_data_func = hashmap->clean_func ? hashmap->clean_func : NULL;
 
     if (clean_data_func) {
-        // data items stored in the hashmap require custom cleaning
+        // data items stored in the hash map require custom cleaning
         u32 const total_capacity = 1U << hashmap->ex_capa;
 
         for (u32 j=0; j<total_capacity; ++j) {
@@ -253,7 +253,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
     if (new_hashmap == NULL) {
         return false;
     }
-    // new_hashmap: slot count updated but the size of one slot remained the same 
+    // new_hashmap: slot count updated but the size of one slot unit remained same
 
     u32 const current_capacity = 1U << hashmap->ex_capa;
     u32 const new_mask = (1U << new_hashmap->ex_capa) - 1;
@@ -265,7 +265,6 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
 
         u32 idx = META_GET_HASH(bucket->meta_data) & new_mask;
         bucket->meta_data = META_SET_PSL(bucket->meta_data, 0U);
-        // insert slot (meta, key and data) to the new hashmap
 
         while (true) {
             struct Bucket *new_bucket = (struct Bucket *)
@@ -300,9 +299,9 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
             idx = (idx + 1) & new_mask;
         }
     }
-    // clean slots in the previous hashmap but keep its _temp content (hmap_remove needs this)
+    // clean slots in the previous hash map but keep its _temp content (hmap_remove needs this)
     _clean_hashmap_slots(hashmap);
-    // set new hashmap slots to old, slot size is the same but their count differ
+    // set new hash map slots to old, slot size is the same but their count differ
     hashmap->slots = new_hashmap->slots;
     hashmap->ex_capa = new_hashmap->ex_capa;
 
@@ -412,7 +411,7 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
         struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * idx);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data) || META_GET_PSL(bucket->meta_data) < psl) {
-            // targeted key not in the hashmap, nothing to remove
+            // targeted key not in the hash map, nothing to remove
             return NULL;
         }
         if (META_GET_HASH(bucket->meta_data) == hash_trunc &&
@@ -447,9 +446,8 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
         hashmap->occ_slots <= (1U << hashmap->ex_capa) * MAP_LOAD_FACTOR_LOWER
     )
     {
-        // hashmap with current size too sparse, resize down
+        // hash map with current size too sparse, resize down
         u32 new_ex_capa = hashmap->ex_capa - 1;
-
         // resize down as much as possible
         while (
             new_ex_capa > MAP_INIT_EXP_CAPACITY &&
@@ -458,9 +456,8 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
         {
             new_ex_capa -= 1;
         }
-
         if (!_hmap_resize(hashmap, new_ex_capa)) {
-            fprintf(stderr, "resize down failed\n");
+            fprintf(stderr, "hash map resize down failed\n");
         }
     }
 
@@ -477,7 +474,7 @@ struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(vo
         init_capa = MAP_INIT_EXP_CAPACITY;
     }
     else if (init_capa > MAP_MAX_EXP_CAPACITY) {
-        fprintf(stderr, "cannot allocate a hashmap of this size.\n");
+        fprintf(stderr, "cannot allocate a hash map of this size.\n");
         return NULL;
     }
 
@@ -527,8 +524,9 @@ bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data) {
     }
 
     if (hashmap->occ_slots >= (1U << hashmap->ex_capa) * MAP_LOAD_FACTOR_UPPER) {
+        // need to resize the hash map
         if (hashmap->ex_capa == MAP_MAX_EXP_CAPACITY) {
-            fprintf(stderr, "hashmap capacity cannot be increased anymore.\n");
+            fprintf(stderr, "hash map capacity cannot be increased anymore.\n");
             return false;
         }
         if (!_hmap_resize(hashmap, hashmap->ex_capa + 1)) {

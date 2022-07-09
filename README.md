@@ -49,31 +49,33 @@ typedef struct {
 } Temperature;
 
 int main() {
-    // using default init size, 16 open slots and no specific clean up function (hence pass NULL)
+    // Use default init size, 16 open slots and no specific clean up function (hence pass NULL)
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
 
     Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
     Temperature temp_28 = {.kelvin=298.15, .hour=12, .mins=0};
 
-    // insert temperature data (actually, pointer to it) to hashmap, using dates as keys
-    // for every insertion, hashmap makes itself a copy of the data 
+    // Insert temperature data to the hash map, using dates as keys
+    // For every insertion, hash map makes itself a copy of the data (see caveat below in API summary)
     hashmap_insert(hashmap, "1.8.2021", &temp_18);
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
 
-    // print some internal hashmap statistics to stdout, e.g. the load factor is 2/16
+    // Print some internal statistics to stdout, e.g. the load factor is 2/16 now
     hashmap_stats(hashmap);
     hashmap_traverse(hashmap);
 
-    // get data (reference) back from hashmap and check that it has remained correct
+    // Get data (reference) back and check that it has remained correct
+    // t_18 is safe to use until next hash map insert (possible resizing) or remove call
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
     assert(t_18->kelvin - temp_18.kelvin < 0.01);
 
-    // remove the same data from the hashmap (ignoring the return value for now)
+    // Remove the same data (ignoring the return value for now)
     hashmap_remove(hashmap, "1.8.2021");
     
     assert(hashmap_get(hashmap, "1.8.2021") == NULL);
+    // Notice that, previous t_18 is currently a dangling pointer
 
-    // finally, clean up memory used by the hashmap struct
+    // Finally, clean up memory used by the hash map struct
     hashmap_free(hashmap);
 }
 ```
@@ -111,26 +113,32 @@ Here it's seen that a collision occurred for the key "2.8.2021" and hence it was
 
 Here is a short summary for some of the most important details related to this implementation:
 
-- initialise a new hash map by calling `hashmap_init` or `hashmap_init_with_size`
+- Initialise a new hash map by calling `hashmap_init` or `hashmap_init_with_size`
 
-    New hash map can be initialised to default size by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising the hashmap and this must not exceed approx 2^32 bytes. Custom clean up function can be passed when initialising if specific memory clean up is needed when calling later *hashmap_free*. Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can occur only when removing items from the hash map).
+    New hash map can be initialised to default size by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising the hash map and this must not exceed approx 2^32 bytes. Custom clean up function can be passed when initialising if specific memory clean up is needed when calling *hashmap_free* later.
 
-- insert data items to hash map by `hashmap_insert`
+    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can occur only when removing items from the hash map).
 
-    For every insertion, the hash map makes itself a copy of the passed data and key. A boolean value is returned as a response to indicate whether the insertion was successful, though .
+- Insert data item to hash map by `hashmap_insert`
 
-- show internal hashmap struct statistics by `hashmap_stats` and `hashmap_traverse`
+    For every insertion, the hash map makes itself a copy of the passed data item and key. This insert operation returns a boolean value to indicate whether the insertion was successful.
+
+    For a bit more complicated data types (e.g., contain pointers to manually allocated memory) hash map insertion calls increase the reference count to these memory locations. In this respect, the copying mechanism is shallow.
+
+- Show internal hash map struct statistics by `hashmap_stats` and `hashmap_traverse`
 
     For the former call, current total capacity, occupied slot count, size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter call, the whole hash map will be traversed and meta data information for each slot gets printed to stdout.
 
-- get data from hash map or check only its existence by `hashmap_get`
+- Get data from hash map or check only its existence by `hashmap_get`
 
-    Returned data is a reference to data (NULL if not found) that was copied and stored during a preceding insertion operation.
+    Returned data is a reference to data (NULL if not found) item that was copied and stored during a preceding insertion operation. This reference has kind of limited lifetime and is thus safe to use only prior to next hash map insertion or removal call as the hash map might resize during these calls.
 
-- remove data from hash map by `hashmap_remove`
+- Remove data from hash map by `hashmap_remove`
 
     Data mapped to by the provided key will be removed if found from the hash map. If the data is found, also a reference to it is returned as a response though the reference points to a temporary location (used internally by the hash map struct) which lifetime ends upon the next hash map operation call. 
     
-- clean up used memory of the hash map by `hashmap_free`
+- Clean up used memory of the hash map by `hashmap_free`
 
-See the *hashmap.h* header file for more information.
+    Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was given during initialisation, it is called to for each data item stored in the hash map. Please see an example of a custom cleaning function in the *hashmap.h*.
+
+See the *hashmap.h* header file for more information and examples.
