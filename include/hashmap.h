@@ -12,20 +12,20 @@ Initialise a new hash map struct with the default capacity of 16 storage slots.
 
 HashMap struct uses internally the following memory layout:
 
-(0) meta data (bucket) | key | user data ... (N) meta data (bucket) | key | user data,
+(0) meta data (bucket) | key | data ... (N) meta data (bucket) | key | data,
 
 where the number inside the brackets represents a slot number, which in the default
-case of 16 storage slots goes from 0 to 15. Size of one (user) data item must be known
+case of 16 storage slots goes from 0 to 15. Size of one data item must be known
 when initialising the hash map and kept same during usage of the hash map struct.
 
-Meta data consumes 4 bytes each, a key 20 bytes and the user data item x bytes. Size of 
-one user data item is restricted approx below 2^32 bytes. Also the slot count cannot 
+Meta data consumes 4 bytes each, a key 20 bytes and the user data item x bytes. Size of
+one data item is restricted approx below 2^32 bytes. Also the slot count cannot
 exceed the upper bound of 2^20 slots.
 
 Params:
-    item_size: size of one (user) data item
+    item_size: size of one data item
     clean_func: a function pointer if custom cleaning functionality is needed.
-        In most cases, set this to NULL.
+        If such is not needed, set this to NULL.
 
 Returns:
     struct HashMap*: a pointer to created hash map struct. If the initialisation 
@@ -43,10 +43,10 @@ insert 10 000 elements to the hash map, this initialising option can allocate th
 storage size from the start.
 
 Params:
-    item_size: size of one (user) data item
+    item_size: size of one data item
     elems: initial storage count for the hash map
     clean_func: a function pointer if custom cleaning functionality is needed.
-        In most cases, set this to NULL.
+        If such is not needed, set this to NULL.
 
 Returns:
     struct HashMap*: a pointer to created hash map struct. If the initialisation failed for 
@@ -61,7 +61,7 @@ Size of the key is restricted and the insertion will fail (return false) if the
 used key is too large. It's recommended that the key consists only of characters
 that consume one byte of memory (ascii characters).
 
-For every insertion, the hash map makes itself a copy of the passed data item and key.
+For every insertion, the hash map makes itself a shallow copy of the passed data item and key.
 
 Notice that for a bit more complicated data types e.g.,
 
@@ -82,20 +82,20 @@ to the memory address where t->ptr_to_u is pointing to. This has implications to
 hash map operations.
 
 Params:
-    hashmap: pointer to the HashMap struct
-    key: string type key for which the passed data will be mapped to
-    data: a pointer to the data item
+    hashmap: HashMap struct
+    key: key for which the passed data will be mapped to
+    data: data item
 
 Returns:
     bool: true if the insertion succeeded, false otherwise. Latter case can occur
-        only if probe sequence length reaches its upper bound but this is unlikely.
+        if and only if probe sequence length reaches its upper bound.
 */
 bool hashmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 
 /*
 Get data item from the hash map.
 
-Returned data item will be a reference to data that was copied and stored to the hash map
+Returned value will be a reference to data that was copied and stored to the hash map
 in a preceding insertion operation. This reference has lifetime until next hash map insertion
 or removal operation (where the hash map might resize) or when the whole hash map is deleted
 from memory.
@@ -104,44 +104,43 @@ Also in a bit more complicated cases, lifetime ends when the original data item 
 See the example above for `hashmap_insert` for more info about this case.
 
 Params:
-    hashmap: pointer to the HashMap struct
-    key: string type key for which the data item has been mapped to
+    hashmap: HashMap struct
+    key: key for which the data item has been mapped to
 
 Returns:
-    pointer to the data: if a data item with passed key is found, otherwise NULL.
+    pointer to the data item: if a data item with passed key is found, otherwise NULL.
 */
 void* hashmap_get(struct HashMap *hashmap, char const *key);
 
 /*
-Remove data from the hash map.
+Remove data item from the hash map.
 
 Data mapped to by the provided key will be removed if found from the hash map.
-If the data is found, also a reference to it is returned though the reference 
+In this case a reference to the data item is returned as a response though the reference
 points to a temporary location (used internally by the hash map struct) which 
 lifetime ends upon the next hash map operation call.
 
 Params:
-    hashmap: the HashMap struct
-    key: string type key for which the data item has been mapped to
+    hashmap: HashMap struct
+    key: key for which the data item has been mapped to
 
 Returns:
-    pointer to the removed data: if a data item with passed key is found,
-        otherwise NULL is returned.
+    pointer to the removed data item: this if such a data item is found, otherwise NULL.
 */
 void* hashmap_remove(struct HashMap *hashmap, char const *key);
 
 /*
 Clean up memory used by the hash map.
 
-If no custom clean up function was passed during initialisation, cleaning
+If no custom clean up function were passed during initialisation, cleaning
 process will be kind of dummy, i.e., just freeing the slots, temporary storage
 and the HashMap struct itself. Thus, in this case, if the data items contained
 pointers to other memory addresses with allocated objects/data, the user remains
 responsible to clean up those.
 
 Otherwise, with custom clean up function given, this function is called for each
-data item stored in the hash map. E.g., in the case illustrated above before
-`hashmap_insert` operation, one could define following cleaning function
+data item stored in the hash map. E.g., in the example above with `hashmap_insert`
+operation, one could define following cleaning function
 
 void clean(void *data_item) {
     if (((struct T *)data_item)->ptr_to_u) {
@@ -152,29 +151,28 @@ void clean(void *data_item) {
 in order to free allocated memory starting at address data_item->ptr_to_u.
 
 Params:
-    hashmap: the HashMap struct
+    hashmap: HashMap struct
 */
 void hashmap_free(struct HashMap *hashmap);
 
 /*
 Traverse slots of the hash map.
 
-Will print the starting address of each slot and indicate whether each slot
-contains a data item. Mostly useful for debugging.
+Prints the starting address of each slot and whether the slot is occupied or not.
 
 Params:
-    hashmap: the HashMap struct
+    hashmap: HashMap struct
 */
 void hashmap_traverse(struct HashMap *hashmap);
 
 /*
 Print hash map internal statistics.
 
-For this call current total capacity, occupied slot count, size of each slot 
-and the load factor (occupied slots / total capacity) are printed to stdout.
+Current total capacity, occupied slot count, size of each slot and 
+the load factor (occupied slots / total capacity) are printed to stdout.
 
 Params:
-    hashmap: the HashMap struct
+    hashmap: HashMap struct
 */
 void hashmap_stats(struct HashMap *hashmap);
 
