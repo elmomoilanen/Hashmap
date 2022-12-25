@@ -2,11 +2,11 @@
 
 [![main](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml/badge.svg)](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml)
 
-Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as a collision resolution strategy. Library uses strings as keys that are internally mapped to values via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
+Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as the collision resolution strategy. Library uses strings as keys that are internally mapped to values via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
 
-Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that the library is targeted mainly for small scale needs and longer keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary.
+Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that this library is targeted mainly for small scale needs and longer keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary.
 
-Memory layout is formed by so called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and shouldn't be used with multi-threaded code.
+Memory layout is formed by so-called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and shouldn't be used directly with multi-threaded code.
 
 Precise memory layout for a slot is the following: meta data (4 bytes in total; 1 bit to mark whether the slot is reserved, 11 bits for probe sequence length (PSL) and 20 bits for truncated hash value) | key (20 bytes, last byte always reserved for the null character) | data item (x bytes, determined at initialisation). Meta data is implemented as a normal unsigned integer data type and the specific bits inside it are modified by bitwise operations. As the maximal capacity of the hash map is limited, 11 bits for PSL and 20 bits for hash are sufficient.
 
@@ -64,7 +64,7 @@ int main() {
     hashmap_stats(hashmap);
     hashmap_traverse(hashmap);
 
-    // Get data item (reference) back and check that it has remained correct
+    // Get back a reference to data and check that it has remained correct
     // t_18 is safe to use until next hash map insertion or removal call
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
     assert(t_18->kelvin - temp_18.kelvin < 0.01);
@@ -80,7 +80,7 @@ int main() {
 }
 ```
 
-In this case, output of the function call *hashmap_stats* will be the following
+In this case, output of the function call *hashmap_stats* is the following
 
 ```
 Total capacity: 16
@@ -131,7 +131,7 @@ Here is a short summary for some of the most important details related to this i
 
 - Get data item from hash map or check only its existence by `hashmap_get`
 
-    This is a reference to data item (NULL if not found) that was copied and stored during a preceding insertion operation. The reference has kind of limited lifetime and is thus safe to use only prior to next hash map insertion or removal call as the hash map might resize during these operations.
+    This is a reference to data item (NULL, if not found) that was copied and stored during a preceding insertion operation. The reference has kind of limited lifetime and is thus safe to use only prior to next hash map insertion or removal call as the hash map might resize during these operations.
 
 - Remove data item from hash map by `hashmap_remove`
 
