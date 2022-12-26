@@ -2,23 +2,23 @@
 
 [![main](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml/badge.svg)](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml)
 
-Library implementing the hash map data structure with open addressing, robin hood hashing more presicely, as the collision resolution strategy. Library uses strings as keys that are internally mapped to values via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
+Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
 
 Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that this library is targeted mainly for small scale needs and longer keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary.
 
-Memory layout is formed by so-called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and shouldn't be used directly with multi-threaded code.
+Memory layout is formed by so-called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and shouldn't be used directly with multithreaded code.
 
 Precise memory layout for a slot is the following: meta data (4 bytes in total; 1 bit to mark whether the slot is reserved, 11 bits for probe sequence length (PSL) and 20 bits for truncated hash value) | key (20 bytes, last byte always reserved for the null character) | data item (x bytes, determined at initialisation). Meta data is implemented as a normal unsigned integer data type and the specific bits inside it are modified by bitwise operations. As the maximal capacity of the hash map is limited, 11 bits for PSL and 20 bits for hash are sufficient.
 
 ## Build ##
 
-Expected to work in most common Linux distros (e.g. Ubuntu) and macOS, notice however that for macOS one might need to change the compiler to clang (CC=clang). Library uses C11 standard.
+Expected to work in most common Linux distros (e.g. Ubuntu) and macOS, notice however that for macOS one might need to change the compiler parameter to clang (CC=clang). Library uses C11 standard.
 
 Following shell command builds the library, runs unit tests and lastly cleans up unneeded object files
 ```bash
 make && make test && make clean
 ```
-On a successful build, the static library file *libhashmap.a* is formed in this level of the folder.
+On a successful build, the static library file *libhashmap.a* is formed in this level of the folder structure.
 
 ## Usage ##
 
