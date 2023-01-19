@@ -222,7 +222,6 @@ static struct HashMap* _hmap_init_resized(u32 item_size, u32 ex_capa) {
     return _hmap_init_common(item_size, ex_capa);
 }
 
-
 static void _clean_hashmap_slots(struct HashMap *hashmap) {
     clean_func_type clean_data_func = hashmap->clean_func ? hashmap->clean_func : NULL;
 
@@ -464,7 +463,6 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
     return (char *)hashmap->_temp + hashmap->sz_bucket + hashmap->sz_key;
 }
 
-
 bool get_random_key(u8 *buffer, size_t buffer_len) {
     return _init_random_key(buffer, buffer_len);
 }
@@ -490,7 +488,6 @@ struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(vo
     }
     return NULL;
 }
-
 
 struct HashMap* hmap_init_with_key(size_t item_size, void (*clean_func)(void *)) {
     size_t const sz_meta_chunk = sizeof(struct Bucket) + MAP_MAX_KEY_BYTES;

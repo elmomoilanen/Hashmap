@@ -55,7 +55,6 @@
         v2 = ROTL(v2, 32);                                           \
     } while (0)
 
-
 static u64 _siphash(u8 const *in, size_t const in_len, u8 const *key) {
     // initialization, 16-byte key k (k0, k1) and 32-byte state v (v0 to v3)
     u64 k0 = U8TO64_LE(key);

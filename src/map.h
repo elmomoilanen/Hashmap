@@ -52,7 +52,6 @@ struct HashMap {
     void (*clean_func)(void *);
 };
 
-
 struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(void *));
 void hmap_free(struct HashMap *hashmap);
 
@@ -63,8 +62,7 @@ void* hmap_remove(struct HashMap *hashmap, char const *key);
 void traverse_hashmap_slots(struct HashMap *hashmap);
 void hmap_show_stats(struct HashMap *hashmap);
 
-// Following are meant only for testing hash map
-
+// Following are meant only for testing the hash map
 bool get_random_key(u8 *buffer, size_t buffer_len);
 struct HashMap* hmap_init_with_key(size_t item_size, void (*clean_func)(void *));
 u32 get_occupied_slot_count(struct HashMap *hashmap);

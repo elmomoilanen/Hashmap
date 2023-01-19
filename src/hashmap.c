@@ -1,7 +1,6 @@
 #include "common.h"
 #include "map.h"
 
-
 struct HashMap* hashmap_init(size_t item_size, void (*clean_func)(void *)) {
     return hmap_init(item_size, MAP_INIT_EXP_CAPACITY, clean_func);
 }
