@@ -47,10 +47,10 @@ void hashmap_free(struct HashMap *hashmap) {
     hmap_free(hashmap);
 }
 
-void hashmap_traverse(struct HashMap *hashmap) {
+void hashmap_stats_traverse(struct HashMap *hashmap) {
     traverse_hashmap_slots(hashmap);
 }
 
-void hashmap_stats(struct HashMap *hashmap) {
+void hashmap_stats_summary(struct HashMap *hashmap) {
     hmap_show_stats(hashmap);
 }

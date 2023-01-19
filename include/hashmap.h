@@ -38,9 +38,8 @@ struct HashMap* hashmap_init(size_t item_size, void (*clean_func)(void *));
 Initialise a new hash map struct to a specific size.
 
 This is convenient (more so than the `hashmap_init`) if the user wants straight from
-the start a specific storage count for the hash map struct, e.g. the user would like to
-insert 10 000 elements to the hash map, this initialising option can allocate the needed
-storage size from the start.
+the start a specific storage count for the hash map struct. E.g., to insert 10 000 elements
+to the hash map, this initialising option can allocate the needed storage size from the start.
 
 Params:
     item_size: size of one data item
@@ -78,12 +77,12 @@ struct T *t = alloc(...)
 t->ptr_to_u = alloc(...)
 
 inserting a data item of struct T to the hash map causes there to be two references
-to the memory address where t->ptr_to_u is pointing to. This has implications to other
+to the memory address where t->ptr_to_u is pointing to. This has implications for other
 hash map operations.
 
 Params:
     hashmap: HashMap struct
-    key: key for which the passed data will be mapped to
+    key: for which the passed data will be mapped to
     data: data item
 
 Returns:
@@ -95,20 +94,20 @@ bool hashmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 /*
 Get data item from the hash map.
 
-Returned value will be a reference to data that was copied and stored to the hash map
-in a preceding insertion operation. This reference has lifetime until next hash map insertion
-or removal operation (where the hash map might resize) or when the whole hash map is deleted
-from memory.
+Returned value will be a reference to data that was stored to the hash map as a shallow copy
+of the original data item during a preceding insertion operation call. This reference has
+lifetime until the next hash map insertion or removal operation (when the hash map might resize)
+or when the whole hash map is deleted from memory.
 
 Also in a bit more complicated cases, lifetime ends when the original data item is freed. 
-See the example above for `hashmap_insert` for more info about this case.
+See the example given for `hashmap_insert` for more info about this case.
 
 Params:
     hashmap: HashMap struct
-    key: key for which the data item has been mapped to
+    key: for which the data item has been mapped to
 
 Returns:
-    pointer to the data item: if a data item with passed key is found, otherwise NULL.
+    pointer to the data item: if a data item with the passed key is found, otherwise NULL.
 */
 void* hashmap_get(struct HashMap *hashmap, char const *key);
 
@@ -122,7 +121,7 @@ lifetime ends upon the next hash map operation call.
 
 Params:
     hashmap: HashMap struct
-    key: key for which the data item has been mapped to
+    key: for which the data item has been mapped to
 
 Returns:
     pointer to the removed data item: this if such a data item is found, otherwise NULL.
@@ -139,12 +138,12 @@ pointers to other memory addresses with allocated objects/data, the user remains
 responsible to clean up those.
 
 Otherwise, with custom clean up function given, this function is called for each
-data item stored in the hash map. E.g., in the example above with `hashmap_insert`
-operation, one could define following cleaning function
+data item stored in the hash map. E.g., in the example given for `hashmap_insert`
+operation, one could define the following cleaning function
 
 void clean(void *data_item) {
     if (((struct T *)data_item)->ptr_to_u) {
-        free(((struct T *)data_item)->ptr_to_u)
+        free(((struct T *)data_item)->ptr_to_u);
     }
 }
 
@@ -163,10 +162,10 @@ Prints the starting address of each slot and whether the slot is occupied or not
 Params:
     hashmap: HashMap struct
 */
-void hashmap_traverse(struct HashMap *hashmap);
+void hashmap_stats_traverse(struct HashMap *hashmap);
 
 /*
-Print hash map internal statistics.
+Prints a summary of the hash map internal statistics.
 
 Current total capacity, occupied slot count, size of each slot and 
 the load factor (occupied slots / total capacity) are printed to stdout.
@@ -174,7 +173,7 @@ the load factor (occupied slots / total capacity) are printed to stdout.
 Params:
     hashmap: HashMap struct
 */
-void hashmap_stats(struct HashMap *hashmap);
+void hashmap_stats_summary(struct HashMap *hashmap);
 
 
 #endif /* __HASHMAP__ */

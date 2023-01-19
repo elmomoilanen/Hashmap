@@ -49,7 +49,7 @@ typedef struct {
 } Temperature;
 
 int main() {
-    // Use default init size, 16 open slots and no specific clean up function
+    // Use default init size 16 open slots and no specific clean up function
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
 
     Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
@@ -61,11 +61,11 @@ int main() {
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
 
     // Print some internal statistics to stdout, e.g. the load factor is 2/16 now
-    hashmap_stats(hashmap);
-    hashmap_traverse(hashmap);
+    hashmap_stats_summary(hashmap);
+    hashmap_stats_traverse(hashmap);
 
     // Get back a reference to data and check that it has remained correct
-    // t_18 is safe to use until next hash map insertion or removal call
+    // t_18 is safe to use until the next hash map insertion or removal call
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
     assert(t_18->kelvin - temp_18.kelvin < 0.01);
 
@@ -80,7 +80,7 @@ int main() {
 }
 ```
 
-In this case, output of the function call *hashmap_stats* is the following
+In this case, output of the function call *hashmap_stats_summary* is the following
 
 ```
 Total capacity: 16
@@ -89,7 +89,7 @@ Slot size in bytes: 40
 Load factor: 0.12
 ```
 
-and for *hashmap_traverse* resulted output could start e.g. as follows (showing only the first five meta data buckets of the total 16)
+and for *hashmap_stats_traverse* resulted output could start e.g. as follows (showing only the first five meta data buckets of the total 16)
 
 ```
 Bucket address: 0x130e043c0
@@ -125,20 +125,20 @@ Here is a short summary for some of the most important details related to this i
 
     For a bit more complicated data types (e.g., contain pointers to manually allocated memory) hash map insertion calls increase the reference count to these memory locations. In this respect, the copying mechanism is shallow.
 
-- Show internal hash map struct statistics by `hashmap_stats` and `hashmap_traverse`
+- Show internal hash map struct statistics by `hashmap_stats_summary` and `hashmap_stats_traverse`
 
     For the former call, current total capacity, occupied slot count, size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter call, the whole hash map will be traversed and meta data information for each slot gets printed to stdout.
 
 - Get data item from hash map or check only its existence by `hashmap_get`
 
-    This is a reference to data item (NULL, if not found) that was copied and stored during a preceding insertion operation. The reference has kind of limited lifetime and is thus safe to use only prior to next hash map insertion or removal call as the hash map might resize during these operations.
+    This is a reference to data item (NULL, if not found) that was stored to the hash map as a shallow copy of the original data item during insertion operation. The reference has kind of limited lifetime and is thus safe to use only prior to the next hash map insertion or removal call as the hash map might resize during these operations.
 
 - Remove data item from hash map by `hashmap_remove`
 
-    Data mapped to by the provided key will be removed if found from the hash map. In this case a reference to the data item is returned as a response though the reference points to a temporary location (used internally by the hash map struct) which lifetime ends upon the next hash map operation call.
+    Data mapped to by the provided key will be removed if found from the hash map. In this case a reference to the data item is returned as a response though the reference points to a temporary location (used internally by the hash map struct) which lifetime ends upon the next hash map operation call. If no data is found with the key, NULL is returned.
     
 - Clean up used memory of the hash map by `hashmap_free`
 
-    Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was given during initialisation, it is called to for each data item stored in the hash map. Please see an example of a custom cleaning function in the *hashmap.h*.
+    Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was given during initialisation, it is called to for each data item stored in the hash map. Please see an example of a custom cleaning function in *hashmap.h*.
 
 See the *hashmap.h* header file for more information and examples.
