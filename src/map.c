@@ -533,7 +533,7 @@ void* hmap_remove(struct HashMap *hashmap, char const *key) {
         _hmap_remove(hashmap, key);
 }
 
-bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(void const *)) {
+bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *)) {
     u32 const total_capacity = 1U << hashmap->ex_capa;
     u32 const data_offset = hashmap->sz_bucket + hashmap->sz_key;
 
@@ -541,7 +541,10 @@ bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(void const *)) {
         struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
 
         if (BUCKET_IS_TAKEN(bucket->meta_data)) {
-            if (!callback((char *)bucket + data_offset)) {
+            char key_buffer[MAP_MAX_KEY_BYTES] = {0};
+            memcpy(key_buffer, (char *)bucket + hashmap->sz_bucket, hashmap->sz_key - 1);
+
+            if (!callback(key_buffer, (char *)bucket + data_offset)) {
                 return false;
             }
         }
@@ -585,7 +588,6 @@ void traverse_hashmap_slots(struct HashMap *hashmap) {
             char buffer[MAP_MAX_KEY_BYTES] = {0};
             memcpy(buffer, (char *)bucket + hashmap->sz_bucket, hashmap->sz_key - 1);
             fprintf(stdout, "Key: %s\n", buffer);
-
         } else {
             fprintf(stdout, "Bucket is free\n");
         }

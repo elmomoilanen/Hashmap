@@ -210,7 +210,9 @@ static void test_hashmap_usage_in_search_algorithm() {
 
 static u32 iter_visited_counter = 0;
 
-bool custom_callback(void const *data) {
+bool custom_callback(char const *key, void const *data) {
+    assert(key != NULL);
+
     u32 const mins = ((Temperature *)data)->mins;
     if (mins > 0) {
         iter_visited_counter += mins;
@@ -241,6 +243,8 @@ static void test_hashmap_iter_apply() {
     assert(hashmap_iter_apply(hashmap, custom_callback) == true);
     assert(iter_visited_counter == data_items);
 
+    hashmap_free(hashmap);
+
     PRINT_SUCCESS(__func__);
 }
 
@@ -254,6 +258,34 @@ static void test_hashmap_iter_apply_early_termination() {
 
     // Test that the return value is correct
     assert(hashmap_iter_apply(hashmap, custom_callback) == false);
+
+    hashmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
+bool custom_callback_keys(char const *key, void const *data) {
+    assert(data != NULL);
+
+    // MAP_MAX_KEY_BYTES == 20
+    if (strncmp(key, "15.8.2021", 20) == 0 || strncmp(key, "16.8.2021", 20) == 0) {
+        iter_visited_counter += 1;
+        return true;
+    }
+    return false;
+}
+
+static void test_hashmap_iter_apply_keys() {
+    iter_visited_counter = 0;
+    struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
+
+    hashmap_insert(hashmap, "15.8.2021", &(Temperature){.kelvin=251.0, .hour=12, .mins=0});
+    hashmap_insert(hashmap, "16.8.2021", &(Temperature){.kelvin=254.0, .hour=12, .mins=0});
+
+    assert(hashmap_iter_apply(hashmap, custom_callback_keys) == true);
+    assert(iter_visited_counter == 2);
+
+    hashmap_free(hashmap);
 
     PRINT_SUCCESS(__func__);
 }
@@ -298,6 +330,7 @@ test_func hashmap_tests[] = {
     {"hashmap_usage_in_search_algorithm", test_hashmap_usage_in_search_algorithm},
     {"hashmap_iter_apply", test_hashmap_iter_apply},
     {"hashmap_iter_apply_early_termination", test_hashmap_iter_apply_early_termination},
+    {"hashmap_iter_apply_keys", test_hashmap_iter_apply_keys},
     {"hashmap_readme_example", test_hashmap_readme_example},
     {NULL, NULL},
 };

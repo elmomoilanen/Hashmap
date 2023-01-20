@@ -155,7 +155,7 @@ Params:
 void hashmap_free(struct HashMap *hashmap);
 
 /*
-Iterate the hash map and apply a callback to data items.
+Iterate the hash map and apply a callback to the keys and data items.
 
 Iteration continues as long as the callback keeps returning true. That is,
 the iteration stops for the first false return value from the callback or
@@ -163,13 +163,14 @@ when the hash map has been iterated through.
 
 Params:
     hashmap: HashMap struct
-    callback: a function pointer that will be applied for data items. A data item
-        should not be modified in place.
+    callback: a function pointer that is to be applied for data items. This function
+        must take two arguments for the key and data item and return a boolean value.
+        Data item and key should not be modified within the function.    
 
 Returns:
     bool: true if the hash map was completely iterated through, false otherwise.
 */
-bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(void const *));
+bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *));
 
 /*
 Traverse slots of the hash map.
