@@ -155,6 +155,23 @@ Params:
 void hashmap_free(struct HashMap *hashmap);
 
 /*
+Iterate the hash map and apply a callback to data items.
+
+Iteration continues as long as the callback keeps returning true. That is,
+the iteration stops for the first false return value from the callback or
+when the hash map has been iterated through.
+
+Params:
+    hashmap: HashMap struct
+    callback: a function pointer that will be applied for data items. A data item
+        should not be modified in place.
+
+Returns:
+    bool: true if the hash map was completely iterated through, false otherwise.
+*/
+bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(void const *));
+
+/*
 Traverse slots of the hash map.
 
 Prints the starting address of each slot and whether the slot is occupied or not.

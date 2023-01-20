@@ -160,12 +160,10 @@ static void _hmap_init_set_size_members(struct HashMap *hashmap, u32 item_size, 
     hashmap->ex_capa = ex_capa;
 }
 
-
 static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     struct HashMap *hashmap = calloc(1, sizeof *hashmap);
 
     if (hashmap == NULL) {
-        fprintf(stderr, "failed to allocate memory for the hash map struct.\n");
         return NULL;
     }
 
@@ -175,7 +173,6 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     hashmap->slots = calloc(init_slot_count, hashmap->sz_slot);
 
     if (hashmap->slots == NULL) {
-        fprintf(stderr, "failed to allocate memory for the hash map slots.\n");
         free(hashmap);
         return NULL;
     }
@@ -183,7 +180,6 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     hashmap->_temp = calloc(MAP_TEMP_SLOTS, hashmap->sz_slot);
 
     if (hashmap->_temp == NULL) {
-        fprintf(stderr, "failed to allocate backup memory for the hash map.\n");
         _clean_up(MAP_TEMP_SLOTS, hashmap->slots, hashmap);
         return NULL;
     }
@@ -288,7 +284,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
                 );
             }
             if (META_GET_PSL(bucket->meta_data) >= max_psl) {
-                fprintf(stderr, "maximal probe sequence length reached, unable to resize.\n");
+                // maximal probe sequence length reached, unable to resize
                 free(new_hashmap->slots);
                 free(new_hashmap->_temp);
                 free(new_hashmap);
@@ -390,7 +386,7 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
             psl = META_GET_PSL(((struct Bucket *)(hashmap->_temp))->meta_data);
         }
         if (psl >= max_psl) {
-            fprintf(stderr, "maximal probe sequence length reached, unable to insert.\n");
+            // Maximal probe sequence length reached, cannot insert
             return false;
         }
         psl++;
@@ -455,9 +451,7 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
         {
             new_ex_capa -= 1;
         }
-        if (!_hmap_resize(hashmap, new_ex_capa)) {
-            fprintf(stderr, "hash map resize down failed\n");
-        }
+        _hmap_resize(hashmap, new_ex_capa);
     }
 
     return (char *)hashmap->_temp + hashmap->sz_bucket + hashmap->sz_key;
@@ -539,6 +533,21 @@ void* hmap_remove(struct HashMap *hashmap, char const *key) {
         _hmap_remove(hashmap, key);
 }
 
+bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(void const *)) {
+    u32 const total_capacity = 1U << hashmap->ex_capa;
+    u32 const data_offset = hashmap->sz_bucket + hashmap->sz_key;
+
+    for (u32 j=0; j<total_capacity; ++j) {
+        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+
+        if (BUCKET_IS_TAKEN(bucket->meta_data)) {
+            if (!callback((char *)bucket + data_offset)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 u32 get_occupied_slot_count(struct HashMap *hashmap) {
     u32 const total_capacity = 1U << hashmap->ex_capa;

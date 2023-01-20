@@ -208,6 +208,56 @@ static void test_hashmap_usage_in_search_algorithm() {
     PRINT_SUCCESS(__func__);
 }
 
+static u32 iter_visited_counter = 0;
+
+bool custom_callback(void const *data) {
+    u32 const mins = ((Temperature *)data)->mins;
+    if (mins > 0) {
+        iter_visited_counter += mins;
+        return true;
+    }
+    return false;
+}
+
+static void test_hashmap_iter_apply() {
+    iter_visited_counter = 0;
+    struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
+
+    u32 const data_items = 10;
+
+    for (u32 j=1; j<=data_items; ++j) {
+        char key[10];
+        snprintf(key, sizeof key, "%s_%u", "key", j);
+
+        Temperature temp = {
+            .kelvin=(f32)j,
+            .hour=j,
+            .mins=1
+        };
+
+        assert(hashmap_insert(hashmap, key, &temp) == true);
+    }
+    // Test that all slots were visited and returned true
+    assert(hashmap_iter_apply(hashmap, custom_callback) == true);
+    assert(iter_visited_counter == data_items);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static void test_hashmap_iter_apply_early_termination() {
+    iter_visited_counter = 0;
+    struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
+
+    hashmap_insert(hashmap, "1.8.2021", &(Temperature){.kelvin=250.0, .hour=12, .mins=1});
+    hashmap_insert(hashmap, "2.8.2021", &(Temperature){.kelvin=257.0, .hour=12, .mins=0});
+    hashmap_insert(hashmap, "3.8.2021", &(Temperature){.kelvin=244.0, .hour=12, .mins=1});
+
+    // Test that the return value is correct
+    assert(hashmap_iter_apply(hashmap, custom_callback) == false);
+
+    PRINT_SUCCESS(__func__);
+}
+
 static void test_hashmap_readme_example() {
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
 
@@ -246,6 +296,8 @@ test_func hashmap_tests[] = {
     {"complete_hashmap_mid_size", test_complete_hashmap_mid_size},
     {"complete_hashmap_oversize_init", test_complete_hashmap_oversize_init},
     {"hashmap_usage_in_search_algorithm", test_hashmap_usage_in_search_algorithm},
+    {"hashmap_iter_apply", test_hashmap_iter_apply},
+    {"hashmap_iter_apply_early_termination", test_hashmap_iter_apply_early_termination},
     {"hashmap_readme_example", test_hashmap_readme_example},
     {NULL, NULL},
 };

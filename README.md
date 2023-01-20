@@ -141,4 +141,8 @@ Here is a short summary for some of the most important details related to this i
 
     Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was given during initialisation, it is called to for each data item stored in the hash map. Please see an example of a custom cleaning function in *hashmap.h*.
 
+- Iterate the hash map and apply a callback to data items by `hashmap_iter_apply`
+
+    Iteration through the hash map continues as long as the callback keeps returning true.
+
 See the *hashmap.h* header file for more information and examples.
