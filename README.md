@@ -12,13 +12,15 @@ Precise memory layout for a slot is the following: meta data (4 bytes in total; 
 
 ## Build ##
 
-Expected to work in most common Linux distros (e.g. Ubuntu) and macOS, notice however that for macOS one might need to change the compiler parameter to clang (CC=clang). Library uses C11 standard.
+Expected to work in most common Linux distros (e.g. Ubuntu) and macOS, notice however that for macOS one might need to change the compiler parameter to clang (CC=clang). Library uses C11 standard. Main code uses calloc allocator and tests also the malloc allocator.
 
 Following shell command builds the library, runs unit tests and lastly cleans up unneeded object files
+
 ```bash
 make && make test && make clean
 ```
-On a successful build, the static library file *libhashmap.a* is formed in this level of the folder structure.
+
+On a successful build, the static library file *libhashmap.a* is created as a result in this level of the folder structure.
 
 ## Usage ##
 
