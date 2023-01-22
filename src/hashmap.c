@@ -46,7 +46,10 @@ void hashmap_free(struct HashMap *hashmap) {
     hmap_free(hashmap);
 }
 
-bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *)) {
+bool hashmap_iter_apply(
+    struct HashMap *hashmap,
+    bool (*callback)(char const *, void const *))
+{
     return hmap_iter_apply(hashmap, callback);
 }
 

@@ -56,11 +56,12 @@
     (META_SET_PSL((meta_data), META_GET_PSL((meta_data)) - 1U))
 
 /*
-Total bit count of struct `Bucket`, `BUCKET_TOTAL_BITS`, must be compatible with the u32 type
+`BUCKET_TOTAL_BITS`, which is the total bit count of struct `Bucket`
+must be compatible with the u32 type.
 
-LSB bit is the "taken" value, 0 if bucket is free and 1 if taken
-Following `BUCKET_PSL_BITS` bits are reserved for the probe sequence length value
-Last `BUCKET_HASH_BITS` bits are reserved for the (truncated) hash value
+LSB bit is the "taken" value, 0 if bucket is free and 1 if taken.
+Following `BUCKET_PSL_BITS` bits are reserved for the probe sequence length value.
+Last `BUCKET_HASH_BITS` bits are reserved for the (truncated) hash value.
 */
 struct Bucket {
     u32 meta_data;
@@ -89,9 +90,11 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
         return false;
     }
     if (buflen > MAP_MAX_RAND_BUF_LEN) {
-        fprintf(stderr, "cannot init random key with more than %u bytes.\n",
-        MAP_MAX_RAND_BUF_LEN);
-
+        fprintf(
+            stderr,
+            "cannot init random key with more than %u bytes.\n",
+            MAP_MAX_RAND_BUF_LEN
+        );
         return false;
     }
     errno = 0;
@@ -131,7 +134,6 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
 #endif
     return init_success;
 }
-
 
 static u32 get_truncated_hash(char const *key) {
     u64 hash = siphash(key, strlen(key), randkey);
@@ -222,18 +224,18 @@ static void _clean_hashmap_slots(struct HashMap *hashmap) {
     clean_func_type clean_data_func = hashmap->clean_func ? hashmap->clean_func : NULL;
 
     if (clean_data_func) {
-        // data items stored in the hash map require custom cleaning
         u32 const total_capacity = 1U << hashmap->ex_capa;
 
         for (u32 j=0; j<total_capacity; ++j) {
-            struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+            struct Bucket *bucket = (struct Bucket *)
+                ((char *)hashmap->slots + hashmap->sz_slot * j);
 
             if(BUCKET_IS_TAKEN(bucket->meta_data)) {
-                // bucket has data, call the clean function for it
                 clean_data_func((char *)bucket + hashmap->sz_bucket + hashmap->sz_key);
             }
         }
     }
+
     free(hashmap->slots);
 }
 
@@ -248,13 +250,13 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
     if (new_hashmap == NULL) {
         return false;
     }
-    // new_hashmap: slot count updated but the size of one slot unit remained same
 
     u32 const current_capacity = 1U << hashmap->ex_capa;
     u32 const new_mask = (1U << new_hashmap->ex_capa) - 1;
 
     for (u32 j=0; j<current_capacity; ++j) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * j);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data)) continue;
 
@@ -270,7 +272,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
                 break;
             }
             if (META_GET_PSL(bucket->meta_data) > META_GET_PSL(new_bucket->meta_data)) {
-                // occupied slot, but the key in this slot is "richer", so make a swap
+                // Occupied slot but the key in this slot is "richer", so make a swap
                 memcpy(
                     (char *)new_hashmap->_temp + new_hashmap->sz_slot,
                     new_bucket,
@@ -284,7 +286,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
                 );
             }
             if (META_GET_PSL(bucket->meta_data) >= max_psl) {
-                // maximal probe sequence length reached, unable to resize
+                // Maximal probe sequence length reached, unable to resize
                 free(new_hashmap->slots);
                 free(new_hashmap->_temp);
                 free(new_hashmap);
@@ -294,9 +296,8 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
             idx = (idx + 1) & new_mask;
         }
     }
-    // clean slots in the previous hash map but keep its _temp content (hmap_remove needs this)
+    // Keep _temp content (hmap_remove needs this) but clean others from the old hashmap
     _clean_hashmap_slots(hashmap);
-    // set new hash map slots to old, slot size is the same but their count differ
     hashmap->slots = new_hashmap->slots;
     hashmap->ex_capa = new_hashmap->ex_capa;
 
@@ -312,10 +313,10 @@ static void* _hmap_get(struct HashMap *hashmap, char const *key) {
     u32 idx = hash_trunc & mask, psl = 0;
 
     while (true) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * idx);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * idx);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data) || META_GET_PSL(bucket->meta_data) < psl) {
-            // empty slot or probe sequence length larger than the value in occupied bucket
             return NULL;
         }
         if (META_GET_HASH(bucket->meta_data) == hash_trunc &&
@@ -333,14 +334,21 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
     u32 const mask = (1U << hashmap->ex_capa) - 1;
     u32 idx = hash_trunc & mask, psl = 0;
 
-    memcpy((char *)hashmap->_temp + hashmap->sz_bucket, key, hashmap->sz_key);
-    memcpy((char *)hashmap->_temp + hashmap->sz_bucket + hashmap->sz_key, data, hashmap->sz_item);
+    char key_buffer[MAP_MAX_KEY_BYTES] = {0};
+    strncpy(key_buffer, key, MAP_MAX_KEY_BYTES - 1);
+    memcpy((char *)hashmap->_temp + hashmap->sz_bucket, key_buffer, hashmap->sz_key);
+
+    memcpy(
+        (char *)hashmap->_temp + hashmap->sz_bucket + hashmap->sz_key,
+        data,
+        hashmap->sz_item
+    );
 
     while (true) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * idx);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * idx);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data)) {
-            // empty bucket, just insert here
             _update_bucket_meta(bucket, psl, hash_trunc);
             memcpy(
                 (char *)bucket + hashmap->sz_bucket,
@@ -356,7 +364,7 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
                 (char *)bucket + hashmap->sz_bucket
             ))
         {
-            // keys have the same hash, replace data
+            // Keys have the same hash, replace data
             bucket->meta_data = META_SET_PSL(bucket->meta_data, psl);
             memcpy(
                 (char *)bucket + hashmap->sz_bucket + hashmap->sz_key,
@@ -366,7 +374,7 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
             return true;
         }
         if (psl > META_GET_PSL(bucket->meta_data)) {
-            // occupied slot, but the key in this slot is "richer", so make a swap
+            // Occupied slot but the key in this slot is "richer", so make a swap
             memcpy((char *)hashmap->_temp + hashmap->sz_slot, (char *)bucket, hashmap->sz_slot);
 
             _update_bucket_meta(bucket, psl, hash_trunc);
@@ -375,7 +383,6 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
                 (char *)hashmap->_temp + hashmap->sz_bucket,
                 hashmap->sz_key + hashmap->sz_item
             );
-
             memcpy(
                 hashmap->_temp,
                 (char *)hashmap->_temp + hashmap->sz_slot,
@@ -386,7 +393,13 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
             psl = META_GET_PSL(((struct Bucket *)(hashmap->_temp))->meta_data);
         }
         if (psl >= max_psl) {
-            // Maximal probe sequence length reached, cannot insert
+            // Maximal probe sequence length reached
+            fprintf(
+                stderr,
+                "maximal probe sequence length %u reached, cannot insert key %s",
+                max_psl,
+                key
+            );
             return false;
         }
         psl++;
@@ -396,23 +409,23 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
 
 static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
     u32 const hash_trunc = get_truncated_hash(key);
-
     u32 const mask = (1U << hashmap->ex_capa) - 1;
     u32 idx = hash_trunc & mask, psl = 0;
 
     struct Bucket *prev_bucket;
 
     while (true) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * idx);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * idx);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data) || META_GET_PSL(bucket->meta_data) < psl) {
-            // targeted key not in the hash map, nothing to remove
+            // Targeted key not in the hash map, nothing to remove
             return NULL;
         }
         if (META_GET_HASH(bucket->meta_data) == hash_trunc &&
             _keys_are_equal(key, (char *)bucket + hashmap->sz_bucket))
         {
-            // target key found, copy slot contents to temp location
+            // Target key found, copy slot contents to temp location
             memcpy(hashmap->_temp, bucket, hashmap->sz_slot);
             prev_bucket = bucket;
             break;
@@ -422,13 +435,14 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
     }
     hashmap->occ_slots -= 1;
 
-    // start backward shifting
+    // Start backward shifting
     while (true) {
         idx = (idx + 1) & mask;
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * idx);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * idx);
 
         if (!BUCKET_IS_TAKEN(bucket->meta_data) || META_GET_PSL(bucket->meta_data) == 0) {
-            // empty bucket or a key with PSL 0, nothing to shift anymore
+            // Nothing to shift anymore
             prev_bucket->meta_data = META_SET_TAKEN(prev_bucket->meta_data, 0U);
             break;
         }
@@ -438,12 +452,10 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
     }
 
     if (hashmap->ex_capa > MAP_INIT_EXP_CAPACITY &&
-        hashmap->occ_slots <= (1U << hashmap->ex_capa) * MAP_LOAD_FACTOR_LOWER
-    )
+        hashmap->occ_slots <= (1U << hashmap->ex_capa) * MAP_LOAD_FACTOR_LOWER)
     {
-        // hash map with current size too sparse, resize down
+        // Hash map too sparse, resize down as much as possible
         u32 new_ex_capa = hashmap->ex_capa - 1;
-        // resize down as much as possible
         while (
             new_ex_capa > MAP_INIT_EXP_CAPACITY &&
             hashmap->occ_slots <= (1U << new_ex_capa) * MAP_LOAD_FACTOR_LOWER
@@ -466,7 +478,11 @@ struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(vo
         init_capa = MAP_INIT_EXP_CAPACITY;
     }
     else if (init_capa > MAP_MAX_EXP_CAPACITY) {
-        fprintf(stderr, "cannot allocate a hash map of this size.\n");
+        fprintf(
+            stderr,
+            "cannot allocate a hash map with capacity over 2^%u.\n",
+            MAP_MAX_EXP_CAPACITY
+        );
         return NULL;
     }
 
@@ -476,7 +492,6 @@ struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(vo
         u32 const sz_slot_raw = item_size + sz_meta_chunk;
 
         if (sz_slot_raw < UINT32_MAX - sz_slot_raw % sizeof(void *)) {
-            // init with random key
             return _hmap_init(item_size, init_capa, clean_func, true);
         }
     }
@@ -490,13 +505,12 @@ struct HashMap* hmap_init_with_key(size_t item_size, void (*clean_func)(void *))
         u32 const sz_slot_raw = item_size + sz_meta_chunk;
 
         if (sz_slot_raw < UINT32_MAX - sz_slot_raw % sizeof(void *)) {
-            // init with deterministic key, use only for testing
+            // Init with a deterministic key, use only for testing
             return _hmap_init(item_size, MAP_INIT_EXP_CAPACITY, clean_func, false);
         }
     }
     return NULL;
 }
-
 
 void hmap_free(struct HashMap *hashmap) {
     if (hashmap != NULL) {
@@ -513,18 +527,19 @@ bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data) {
     if (key == NULL || strlen(key) > MAP_MAX_KEY_BYTES - 1 || data == NULL) {
         return false;
     }
-
     if (hashmap->occ_slots >= (1U << hashmap->ex_capa) * MAP_LOAD_FACTOR_UPPER) {
-        // need to resize the hash map
         if (hashmap->ex_capa == MAP_MAX_EXP_CAPACITY) {
-            fprintf(stderr, "hash map capacity cannot be increased anymore.\n");
+            fprintf(
+                stderr,
+                "hash map capacity cannot be increased over 2^%u.\n",
+                MAP_MAX_EXP_CAPACITY
+            );
             return false;
         }
         if (!_hmap_resize(hashmap, hashmap->ex_capa + 1)) {
             return false;
         }
     }
-
     return _hmap_insert(hashmap, key, data);
 }
 
@@ -538,7 +553,8 @@ bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, voi
     u32 const data_offset = hashmap->sz_bucket + hashmap->sz_key;
 
     for (u32 j=0; j<total_capacity; ++j) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * j);
 
         if (BUCKET_IS_TAKEN(bucket->meta_data)) {
             char key_buffer[MAP_MAX_KEY_BYTES] = {0};
@@ -557,7 +573,8 @@ u32 get_occupied_slot_count(struct HashMap *hashmap) {
     u32 occupied = 0;
 
     for (u32 j=0; j<total_capacity; ++j) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * j);
 
         if (BUCKET_IS_TAKEN(bucket->meta_data)) {
             occupied += 1;
@@ -579,18 +596,22 @@ void traverse_hashmap_slots(struct HashMap *hashmap) {
     u32 const total_capacity = 1U << hashmap->ex_capa;
 
     for (u32 j=0; j<total_capacity; ++j) {
-        struct Bucket *bucket = (struct Bucket *)((char *)hashmap->slots + hashmap->sz_slot * j);
+        struct Bucket *bucket = (struct Bucket *)
+            ((char *)hashmap->slots + hashmap->sz_slot * j);
+
         fprintf(stdout, "Bucket address: %p\n", bucket);
 
         if (BUCKET_IS_TAKEN(bucket->meta_data)) {
             fprintf(stdout, "Bucket taken, psl == %u\n", META_GET_PSL(bucket->meta_data));
 
-            char buffer[MAP_MAX_KEY_BYTES] = {0};
-            memcpy(buffer, (char *)bucket + hashmap->sz_bucket, hashmap->sz_key - 1);
-            fprintf(stdout, "Key: %s\n", buffer);
+            char key_buffer[MAP_MAX_KEY_BYTES] = {0};
+            memcpy(key_buffer, (char *)bucket + hashmap->sz_bucket, hashmap->sz_key - 1);
+
+            fprintf(stdout, "Key: %s\n", key_buffer);
         } else {
             fprintf(stdout, "Bucket is free\n");
         }
     }
+    
     fprintf(stdout, "\n\n");
 }

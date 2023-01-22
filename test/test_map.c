@@ -185,6 +185,7 @@ static void test_hashmap_misc_operations_small_size() {
     assert(
         hmap_insert(hashmap, "key_is_there", &(test_type_a){.value_x=-1, .value_y=0, .text="testing"})
     );
+    // next key is the longest allowed
     assert(
         hmap_insert(hashmap, "key_is_there_other_", &(test_type_a){.value_x=0, .value_y=0, .text="testing"})
     );
