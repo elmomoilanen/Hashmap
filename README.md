@@ -117,7 +117,7 @@ Here is a short summary for some of the most important details related to this i
 
 - Initialise a new hash map by calling `hashmap_init` or `hashmap_init_with_size`
 
-    New hash map can be initialised to default size by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising the hash map and this must not exceed approx 2^32 bytes. Custom clean up function can be passed if specific memory clean up is needed when calling *hashmap_free* later.
+    New hash map can be initialised to a default size (slot count) by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising and must not exceed approx 2^32 bytes. Custom clean up function can be passed if specific memory clean up is needed when calling *hashmap_free* later.
 
     Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can occur only when removing data items from the hash map).
 
@@ -145,6 +145,6 @@ Here is a short summary for some of the most important details related to this i
 
 - Iterate the hash map and apply a callback to the keys and data items by `hashmap_iter_apply`
 
-    Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item.
+    Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item. Both must be regarded to be read-only data.
 
 See the *hashmap.h* header file for more information and examples.
