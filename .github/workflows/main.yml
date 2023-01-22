@@ -1,25 +1,36 @@
 name: main
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  build:
+  check_steps:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
         - os: macos-latest
           COMPILER: clang
+          NAME: macos
         - os: ubuntu-latest
-          COMPILER: gcc          
+          COMPILER: gcc
+          NAME: linux
     steps:
     - uses: actions/checkout@v3
+    - name: Env setup
+      if: ${{ matrix.NAME == 'linux' }}
+      run: |
+        sudo apt update
+        sudo apt install valgrind
     - name: Build
-      shell: bash
       run: make CC=${{ matrix.COMPILER }}
     - name: Test
-      shell: bash
       run: make test
+    - name: Memory check
+      if: ${{ matrix.NAME == 'linux' }}
+      run: |
+        valgrind --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=all --quiet --error-exitcode=1 ./test_main
     - name: Clean
-      shell: bash
       run: make clean
