@@ -12,15 +12,29 @@ Precise memory layout for a slot is the following: meta data (4 bytes in total; 
 
 ## Build ##
 
-Expected to work in most common Linux distros (e.g. Ubuntu) and macOS, notice however that for macOS one might need to change the compiler parameter to clang (CC=clang). Library uses C11 standard. Main code uses calloc allocator and tests also the malloc allocator.
+The library is expected to work on most common Linux distros (e.g. Ubuntu) and macOS. Note that for macOS, the compiler parameter may need to be changed to clang (CC=clang). Library uses the C11 standard and the main code uses calloc allocator, while the tests also use the malloc allocator.
 
-Following shell command builds the library, runs unit tests and lastly cleans up unneeded object files
+To build the library, run unit tests, and clean up unneeded object files, run the following command
 
 ```bash
 make && make test && make clean
 ```
 
-On a successful build, the static library file *libhashmap.a* is created as a result in this level of the folder structure.
+If the build is successful, a static library file named libhashmap.a will be created in the current directory. This is all what you need to start using this library and you may continue to the next section about usage.
+
+Optionally to the previous combined make command, the following command installs the library and header file in the system directories specified by the PREFIX variable, which defaults to /usr/local in the Makefile
+
+```bash
+make install
+```
+
+Please note that installation requires elevated permissions, e.g. run the command with sudo on most Linux distros.
+
+To uninstall, run the command
+
+```bash
+make uninstall
+```
 
 ## Usage ##
 

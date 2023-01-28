@@ -80,6 +80,10 @@ inserting a data item of struct T to the hash map causes there to be two referen
 to the memory address where t->ptr_to_u is pointing to. This has implications for other
 hash map operations.
 
+In these more complicated cases (e.g. a struct containing a pointer to another memory address) 
+it must be ensured that the memory at those addresses gets properly freed either manually or 
+by providing a custom clean up function for the hashmap_init in the first place.
+
 Params:
     hashmap: HashMap struct
     key: for which the passed data will be mapped to
