@@ -1,7 +1,7 @@
 *.o
 *.a
 
-test_main
+hashmap_test
 test_prog*
 
 .vscode
