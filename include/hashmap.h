@@ -123,6 +123,8 @@ In this case a reference to the data item is returned as a response though the r
 points to a temporary location (used internally by the hash map struct) which 
 lifetime ends upon the next hash map operation call.
 
+Depending on the current hash map capacity, remove call may trigger resizing of the hash map.
+
 Params:
     hashmap: HashMap struct
     key: for which the data item has been mapped to

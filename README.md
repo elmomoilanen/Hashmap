@@ -133,7 +133,7 @@ Here is a short summary for some of the most important details related to this i
 
     New hash map can be initialised to a default size (slot count) by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising and must not exceed approx 2^32 bytes. Custom clean up function can be passed if specific memory clean up is needed when calling *hashmap_free* later.
 
-    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can occur only when removing data items from the hash map).
+    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can only occur when removing data items from the hash map).
 
 - Insert data item to hash map by `hashmap_insert`
 

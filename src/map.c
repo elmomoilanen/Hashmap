@@ -296,8 +296,10 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
             idx = (idx + 1) & new_mask;
         }
     }
-    // Keep _temp content (hmap_remove needs this) but clean others from the old hashmap
-    _clean_hashmap_slots(hashmap);
+    // Clean memory from old hashmap but do not follow possible pointers as
+    // new_hashmap->slots points then also to those same locations.
+    // There is no need to touch hashmap->_temp and also hmap_remove needs that memory.
+    free(hashmap->slots);
     hashmap->slots = new_hashmap->slots;
     hashmap->ex_capa = new_hashmap->ex_capa;
 

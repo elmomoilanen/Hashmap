@@ -628,10 +628,11 @@ static void test_hashmap_custom_allocation() {
     vec->data = malloc(data_size * sizeof(*vec->data));
     assert(vec->data != NULL);
 
-    vec->capacity = data_size * 2;
+    vec->capacity = data_size;
     vec->size = data_size;
     for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
 
+    // do not pass custom clean up function
     struct HashMap *hashmap = hmap_init_with_key(sizeof *vec, NULL);
     assert(hashmap != NULL);
 
@@ -641,6 +642,7 @@ static void test_hashmap_custom_allocation() {
     struct vector *vec_back = hmap_get(hashmap, "key");
     assert(vec_back != NULL);
     assert(vec_back->size == data_size);
+    assert(vec_back->capacity == data_size);
     for (i32 i=0; i<(i32)vec_back->size; ++i) assert(vec_back->data[i] == i);
 
     hmap_free(hashmap);
@@ -670,7 +672,7 @@ static void test_hashmap_custom_allocation_and_free() {
     vec->data = malloc(data_size * sizeof(*vec->data));
     assert(vec->data != NULL);
 
-    vec->capacity = data_size * 2;
+    vec->capacity = data_size;
     vec->size = data_size;
     for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
 
@@ -702,7 +704,7 @@ static void test_hashmap_custom_allocation_with_remove() {
     vec->data = malloc(data_size * sizeof(*vec->data));
     assert(vec->data != NULL);
 
-    vec->capacity = data_size * 2;
+    vec->capacity = data_size;
     vec->size = data_size;
     for (u32 i=0; i<vec->size; ++i) vec->data[i] = i;
 
@@ -714,18 +716,68 @@ static void test_hashmap_custom_allocation_with_remove() {
 
     assert(hmap_insert(hashmap, "again_key_to_vec", vec) == true);
     assert(hashmap->occ_slots == 1);
-
+    
     assert(hmap_remove(hashmap, "again_key_to_vec") != NULL);
 
     assert(custom_clean_vec_call_counter == 0);
     hmap_free(hashmap);
 
-    // there shouldn't been clean up call as the remove operation was called before
+    // there shouldn't be clean up call as the remove operation was called before hmap_free
     assert(custom_clean_vec_call_counter == 0);
 
     // it's our responsibility to clean the data
     free(vec->data);
     free(vec);
+
+    PRINT_SUCCESS(__func__);
+}
+
+static void test_hashmap_custom_allocation_with_remove_and_resize() {
+    struct vector *vec = malloc(1 * sizeof *vec);
+    struct vector *vec2 = malloc(1 * sizeof *vec2);
+    assert(vec != NULL);
+    assert(vec2 != NULL);
+
+    u32 const data_size = 2;
+    vec->data = calloc(data_size, sizeof(*vec->data));
+    vec2->data = calloc(data_size, sizeof(*vec2->data));
+    assert(vec->data != NULL);
+    assert(vec2->data != NULL);
+
+    vec->capacity = data_size;
+    vec->size = data_size;
+    vec2->capacity = data_size;
+    vec2->size = data_size;
+
+    custom_clean_vec_call_counter = 0;
+
+    u32 const init_capa = 5; // use init capacity 2^5
+
+    // pass a custom clean up function
+    struct HashMap *hashmap = hmap_init(sizeof *vec, init_capa, custom_clean_vec);
+    assert(hashmap != NULL);
+
+    assert(hmap_insert(hashmap, "key_to_vec", vec) == true);
+    assert(hmap_insert(hashmap, "key_to_vec_other", vec2) == true);
+    assert(hashmap->occ_slots == 2);
+
+    // removal of vec should now trigger hash map resizing
+    assert(hmap_remove(hashmap, "key_to_vec") != NULL);
+    assert(hashmap->ex_capa == init_capa - 1);
+    assert(hashmap->occ_slots == 1);
+    // resize must not follow pointers when cleaning old hash map
+    // note: vec is gone but vec2 remains in the new resized hash map
+    assert(custom_clean_vec_call_counter == 0);
+
+    hmap_free(hashmap);
+    // this time the pointer should be followed for vec2
+    assert(custom_clean_vec_call_counter == 1);
+
+    // for vec the data must be cleaned separately
+    free(vec->data);
+    free(vec);
+    // vec2->data already cleaned when called hmap_free
+    free(vec2);
 
     PRINT_SUCCESS(__func__);
 }
@@ -756,7 +808,8 @@ test_func map_tests[] = {
     {"hashmap_integer_data", test_hashmap_integer_data},
     {"hashmap_array_data", test_hashmap_array_data},
     {"hashmap_custom_allocation", test_hashmap_custom_allocation},
-    {"test_hashmap_custom_allocation_and_free", test_hashmap_custom_allocation_and_free},
-    {"test_hashmap_custom_allocation_with_remove", test_hashmap_custom_allocation_with_remove},
+    {"hashmap_custom_allocation_and_free", test_hashmap_custom_allocation_and_free},
+    {"hashmap_custom_allocation_with_remove", test_hashmap_custom_allocation_with_remove},
+    {"hashmap_custom_allocation_with_remove_and_resize", test_hashmap_custom_allocation_with_remove_and_resize},
     {NULL, NULL},
 };
