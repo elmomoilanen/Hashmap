@@ -20,7 +20,7 @@ To build the library, run unit tests, and clean up unneeded object files, run th
 make && make test && make clean
 ```
 
-If the build is successful, a static library file named libhashmap.a will be created in the current directory. This is all what you need to start using this library and you may continue to the next section about usage.
+If the build is successful, a static library file named `libhashmap.a` will be created in the current directory. This is all what you need in order to start using this library and may hence continue to the next section about the usage.
 
 Optionally to the previous combined make command, the following command installs the library and header file in the system directories specified by the PREFIX variable, which defaults to /usr/local in the Makefile
 
