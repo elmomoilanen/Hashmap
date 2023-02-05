@@ -2,13 +2,13 @@
 
 [![main](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml/badge.svg)](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml)
 
-Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values via SipHash-2-4 hashing function, see e.g. the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more information on this hashing algorithm.
+Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function. For more information on this algorithm, see the reference C implementation [SipHash](https://github.com/veorq/SipHash).
 
-Library design restricts size of the keys to 19 bytes, the 20th byte being reserved internally for the null character. One of the reasons for this implementation choice was that this library is targeted mainly for small scale needs and longer keys would seem redundant with respect to this purpose. Underlying memory layout for the hash map can also be implemented more tightly when allowing key sizes only up to a specific boundary.
+Library design limits key size to 19 bytes, with the 20th byte reserved for the null character. This implementation choice was made because the library primarily serves small scale needs, and longer keys would seem redundant with respect to this purpose. Additionally, a more compact memory layout for the hash map can be achieved with fixed key size boundaries.
 
-Memory layout is formed by so-called slots that each have four first bytes reserved for meta data, following 20 bytes reserved for the key (as described earlier) and the next x bytes for an actual data item which size must be known when initialising the hash map in the first place. Slot count (i.e., total capacity of the hash map) can be set at the beginning or left to be configured internally by the library. Notice that there are some other size restrictions in place but these are checked by the library when needed and they shouldn't restrict too much, if any, the user experience; please see the *API summary* section below for more information on these limitations. Notice also that this library is not thread-safe and shouldn't be used directly with multithreaded code.
+The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for the key (as previously discussed), and x bytes for the data item. The size of the data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, but they are handled by the library and should not significantly impact the user experience. See the API summary section below for more details. Note that this library is not thread-safe and should not be used with multithreaded code.
 
-Precise memory layout for a slot is the following: meta data (4 bytes in total; 1 bit to mark whether the slot is reserved, 11 bits for probe sequence length (PSL) and 20 bits for truncated hash value) | key (20 bytes, last byte always reserved for the null character) | data item (x bytes, determined at initialisation). Meta data is implemented as a normal unsigned integer data type and the specific bits inside it are modified by bitwise operations. As the maximal capacity of the hash map is limited, 11 bits for PSL and 20 bits for hash are sufficient.
+The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserved flag, 11 bits for probe sequence length (PSL), and 20 bits for truncated hash value) | key (20 bytes, with the last byte reserved for the null character) | data item (x bytes, determined at initialization). The metadata is represented as an unsigned integer and its specific bits are manipulated using bitwise operations. Given the limited capacity of the hash map, 11 bits for PSL and 20 bits for hash value are sufficient.
 
 ## Build ##
 
@@ -28,8 +28,6 @@ Optionally to the previous combined make command, the following command installs
 make install
 ```
 
-Please note that installation requires elevated permissions, e.g. run the command with sudo on most Linux distros.
-
 To uninstall, run the command
 
 ```bash
@@ -38,20 +36,20 @@ make uninstall
 
 ## Usage ##
 
-Header file *include/hashmap.h* defines public APIs for the library.
+Header file **include/hashmap.h** defines public API for the library.
 
-Indicate to compiler the include path (-I) for the header file *hashmap.h* and library path (-L) and name (-l) for the static library file *libhashmap.a*. E.g. the following shell command
+To compile a source code file that uses this library, specify the include path for the header file `hashmap.h` with the `-I` flag, and the library path and name for the static library file `libhashmap.a` with the `-L` and `-l` flags respectively. For example
 
 ```bash
 gcc test_prog.c -I./include -L. -lhashmap -o test_prog -Wall -Wextra -Werror -std=c11 -g
 ```
 
-would compile a *test_prog.c* source code file that uses this library. Contents of the source code file could be e.g. the following
+This command compiles a `test_prog.c` source code file that uses the library. The contents of the source code file could be similar to
 
 ```C
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "hashmap.h"
 
@@ -96,7 +94,7 @@ int main() {
 }
 ```
 
-In this case, output of the function call *hashmap_stats_summary* is the following
+In this case, output of the function call `hashmap_stats_summary` is the following
 
 ```
 Total capacity: 16
@@ -105,7 +103,7 @@ Slot size in bytes: 40
 Load factor: 0.12
 ```
 
-and for *hashmap_stats_traverse* resulted output could start e.g. as follows (showing only the first five meta data buckets of the total 16)
+and for `hashmap_stats_traverse` resulted output could start e.g. as follows (showing only the first five meta data buckets of the total 16)
 
 ```
 Bucket address: 0x130e043c0
@@ -129,36 +127,36 @@ Here it's seen that a collision occurred for the key "2.8.2021" and hence it was
 
 Here is a short summary for some of the most important details related to this implementation:
 
-- Initialise a new hash map by calling `hashmap_init` or `hashmap_init_with_size`
+- Initialise a new hash map by `hashmap_init` or `hashmap_init_with_size`
 
-    New hash map can be initialised to a default size (slot count) by *hashmap_init* or to meet some initial size requirement by *hashmap_init_with_size*. Size of one data item is passed as an argument when initialising and must not exceed approx 2^32 bytes. Custom clean up function can be passed if specific memory clean up is needed when calling *hashmap_free* later.
+    A new hash map can be initialised to a default size (slot count) by hashmap_init, or to meet an initial size requirement by hashmap_init_with_size. The size of one data item must be passed as an argument during initialisation and cannot exceed approximately 2^32 bytess. If specific memory cleanup is required, a custom cleanup function can be given as argument.
 
-    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if load factor increases over 90 %. Conversely, if the load factor falls below 40 %, the capacity of the hash map will shrink (but can only occur when removing data items from the hash map).
+    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if the load factor exceeds 90%. Conversely, if the load factor falls below 40%, the capacity of the hash map will shrink, but this can only occur when data items are removed from the hash map.
 
-- Insert data item to hash map by `hashmap_insert`
+- Insert a data item to the hash map by `hashmap_insert`
 
-    For every insertion, the hash map makes itself a copy of the passed data item and key. This insert operation returns a boolean value to indicate whether the insertion was successful. Failure occurs if and only if maximal probe sequence length is reached (metadata reserves 11 bits for PSL values).
+    For every insertion, the hash map makes itself a shallow copy of the passed data item and key. A successful insertion returns `true`, while a failed insertion returns `false` which occurs if the key size exceeds 19 bytes, the hash map fails to resize e.g. due to reaching its maximal capacity or when the maximal probe sequence length is reached as specified in the metadata (11 bits reserved for PSL values).
 
-    For a bit more complicated data types (e.g., contain pointers to manually allocated memory) hash map insertion calls increase the reference count to these memory locations. In this respect, the copying mechanism is shallow.
+    For complex data types that contain pointers to memory locations, insertion calls increase the reference count to these memory locations.
 
 - Show internal hash map struct statistics by `hashmap_stats_summary` and `hashmap_stats_traverse`
 
-    For the former call, current total capacity, occupied slot count, size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter call, the whole hash map will be traversed and meta data information for each slot gets printed to stdout.
+    For the former function, current total capacity, occupied slot count, the size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter, the whole hash map will be traversed and metadata information for each slot is printed to stdout.
 
-- Get data item from hash map or check only its existence by `hashmap_get`
+- Get a data item from the hash map by `hashmap_get`
 
-    This is a reference to data item (NULL, if not found) that was stored to the hash map as a shallow copy of the original data item during insertion operation. The reference has kind of limited lifetime and is thus safe to use only prior to the next hash map insertion or removal call as the hash map might resize during these operations.
+    This is a reference to the data item (NULL, if not found) stored in the hash map previously as a shallow copy of the original data item. It has a limited lifetime and should only be used prior to the next insertion or removal operation, as the hash map may resize during these operations and the reference may become invalid.    
 
-- Remove data item from hash map by `hashmap_remove`
+- Remove a data item from the hash map by `hashmap_remove`
 
-    Data mapped to by the provided key will be removed if found from the hash map. In this case a reference to the data item is returned as a response though the reference points to a temporary location (used internally by the hash map struct) which lifetime ends upon the next hash map operation call. If no data is found with the key, NULL is returned.
+    The data associated with the given key will be removed from the hash map if it is found. In this case, a reference to the data item is returned, but it refers to a temporary location that is used internally by the hash map structure. This reference is only valid until the next operation on the hash map is performed. If the key is not found, NULL is returned.
     
-- Clean up used memory of the hash map by `hashmap_free`
+- To clean up the used memory by `hashmap_free`
 
-    Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was given during initialisation, it is called to for each data item stored in the hash map. Please see an example of a custom cleaning function in *hashmap.h*.
+    Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was provided during initialisation of the hash map, it will be called for each data item stored in the hash map. An example of a custom cleaning function can be found in `hashmap.h`.
 
 - Iterate the hash map and apply a callback to the keys and data items by `hashmap_iter_apply`
 
     Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item. Both must be regarded to be read-only data.
 
-See the *hashmap.h* header file for more information and examples.
+For additional information and examples, refer to the `hashmap.h` header file.

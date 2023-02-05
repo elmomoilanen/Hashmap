@@ -56,7 +56,7 @@ struct HashMap* hashmap_init_with_size(size_t item_size, size_t elems, void (*cl
 /*
 Insert data item to the hash map.
 
-Size of the key is restricted and the insertion will fail (return false) if the
+Size of the key is limited to 19 bytes and the insertion will fail (return false) if the
 used key is too large. It's recommended that the key consists only of characters
 that consume one byte of memory (ascii characters).
 
