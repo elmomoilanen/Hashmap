@@ -550,7 +550,7 @@ void* hmap_remove(struct HashMap *hashmap, char const *key) {
         _hmap_remove(hashmap, key);
 }
 
-bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *)) {
+bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void *)) {
     u32 const total_capacity = 1U << hashmap->ex_capa;
     u32 const data_offset = hashmap->sz_bucket + hashmap->sz_key;
 

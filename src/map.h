@@ -55,7 +55,7 @@ void hmap_free(struct HashMap *hashmap);
 void* hmap_get(struct HashMap *hashmap, char const *key);
 bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 void* hmap_remove(struct HashMap *hashmap, char const *key);
-bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *));
+bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void *));
 
 void traverse_hashmap_slots(struct HashMap *hashmap);
 void hmap_show_stats(struct HashMap *hashmap);

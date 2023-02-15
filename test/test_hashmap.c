@@ -210,7 +210,7 @@ static void test_hashmap_usage_in_search_algorithm() {
 
 static u32 iter_visited_counter = 0;
 
-bool custom_callback(char const *key, void const *data) {
+bool custom_callback(char const *key, void *data) {
     assert(key != NULL);
 
     u32 const mins = ((Temperature *)data)->mins;
@@ -264,7 +264,7 @@ static void test_hashmap_iter_apply_early_termination() {
     PRINT_SUCCESS(__func__);
 }
 
-bool custom_callback_keys(char const *key, void const *data) {
+bool custom_callback_keys(char const *key, void *data) {
     assert(data != NULL);
 
     // MAP_MAX_KEY_BYTES == 20
@@ -284,6 +284,42 @@ static void test_hashmap_iter_apply_keys() {
 
     assert(hashmap_iter_apply(hashmap, custom_callback_keys) == true);
     assert(iter_visited_counter == 2);
+
+    hashmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
+bool inc_by_five_callback(char const *key, void *data) {
+    assert(key != NULL);
+    assert(data != NULL);
+
+    *(i32 *)data += 5;
+    return true;
+}
+
+static void test_hashmap_iter_apply_data_mutation() {
+    struct HashMap *hashmap = hashmap_init(sizeof(i32), NULL);
+
+    i32 first = 1, second = 2, third = 3;
+
+    hashmap_insert(hashmap, "first", &first);
+    hashmap_insert(hashmap, "second", &second);
+    hashmap_insert(hashmap, "third", &third);
+
+    assert(hashmap_iter_apply(hashmap, inc_by_five_callback) == true);
+
+    i32 *int_ptr = hashmap_get(hashmap, "first");
+    assert(int_ptr != NULL);
+    assert(*int_ptr == first + 5);
+
+    int_ptr = hashmap_get(hashmap, "second");
+    assert(int_ptr != NULL);
+    assert(*int_ptr == second + 5);
+
+    int_ptr = hashmap_get(hashmap, "third");
+    assert(int_ptr != NULL);
+    assert(*int_ptr == third + 5);
 
     hashmap_free(hashmap);
 
@@ -331,6 +367,7 @@ test_func hashmap_tests[] = {
     {"hashmap_iter_apply", test_hashmap_iter_apply},
     {"hashmap_iter_apply_early_termination", test_hashmap_iter_apply_early_termination},
     {"hashmap_iter_apply_keys", test_hashmap_iter_apply_keys},
+    {"hashmap_iter_apply_data_mutation", test_hashmap_iter_apply_data_mutation},
     {"hashmap_readme_example", test_hashmap_readme_example},
     {NULL, NULL},
 };

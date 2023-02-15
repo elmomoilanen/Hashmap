@@ -157,6 +157,6 @@ Here is a short summary for some of the most important details related to this i
 
 - Iterate the hash map and apply a callback to the keys and data items by `hashmap_iter_apply`
 
-    Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item. Both must be regarded to be read-only data.
+    Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item.
 
 For additional information and examples, refer to the `hashmap.h` header file.

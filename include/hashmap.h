@@ -171,12 +171,11 @@ Params:
     hashmap: HashMap struct
     callback: a function pointer that is to be applied for data items. This function
         must take two arguments for the key and data item and return a boolean value.
-        Data item and key should not be modified within the function.    
 
 Returns:
     bool: true if the hash map was completely iterated through, false otherwise.
 */
-bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void const *));
+bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void *));
 
 /*
 Traverse slots of the hash map.
