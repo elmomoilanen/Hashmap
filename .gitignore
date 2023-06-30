@@ -1,7 +1,4 @@
 *.o
 *.a
-
 hashmap_test
 test_prog*
-
-.vscode
