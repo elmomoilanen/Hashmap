@@ -72,13 +72,13 @@ static u32 const max_psl = (1U << BUCKET_PSL_BITS) - 1;
 
 static bool _init_random_key(u8 *buf, size_t buflen) {
     if (buflen == 0) {
-        fprintf(stderr, "cannot init random key for zero bytes.\n");
+        fprintf(stderr, "Cannot init random key for zero bytes.\n");
         return false;
     }
     if (buflen > MAP_MAX_RAND_BUF_LEN) {
         fprintf(
             stderr,
-            "cannot init random key with more than %u bytes.\n",
+            "Cannot init random key with more than %u bytes.\n",
             MAP_MAX_RAND_BUF_LEN
         );
         return false;
@@ -91,16 +91,13 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
 
     if (result < 0) {
         if (errno) {
-            fprintf(stderr, "error when requesting random bytes: %s.\n", strerror(errno));
+            fprintf(stderr, "Error when requesting random bytes: %s.\n", strerror(errno));
         } else {
-            fprintf(stderr, "unknown error when requesting random bytes.\n");
+            fprintf(stderr, "Unknown error when requesting random bytes.\n");
         }
         init_success = false;
-    }
-    // buflen is some small positive number (from 1 to MAP_MAX_RAND_BUF_LEN)
-    else if (result != (ssize_t)buflen) {
-        // should never end up here
-        fprintf(stderr, "received less random bytes than requested.\n");
+    } else if (result != (ssize_t)buflen) {
+        fprintf(stderr, "Received less random bytes than requested.\n");
         init_success = false;
     }
 #elif __APPLE__
@@ -108,14 +105,14 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
 
     if (result < 0) {
         if (errno) {
-            fprintf(stderr, "error when requesting random bytes: %s.\n", strerror(errno));
+            fprintf(stderr, "Error when requesting random bytes: %s.\n", strerror(errno));
         } else {
-            fprintf(stderr, "unknown error when requesting random bytes.\n");
+            fprintf(stderr, "Unknown error when requesting random bytes.\n");
         }
         init_success = false;
     }
 #else
-    fprintf(stderr, "os not recognised to be Linux or MacOS, cannot init random key.");
+    fprintf(stderr, "OS not Linux or MacOS, cannot init random key.\n");
     init_success = false;
 #endif
     return init_success;
@@ -166,7 +163,7 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     }
 
     hashmap->_temp = calloc(MAP_TEMP_SLOTS, hashmap->sz_slot);
-    
+
     if (hashmap->_temp == NULL) {
         free(hashmap->slots);
         free(hashmap);
@@ -382,10 +379,9 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
             psl = META_GET_PSL(((struct Bucket *)(hashmap->_temp))->meta_data);
         }
         if (psl >= max_psl) {
-            // Maximal probe sequence length reached
             fprintf(
                 stderr,
-                "maximal probe sequence length %u reached, cannot insert key %s",
+                "Max probe sequence length %u reached, cannot insert key %s.\n",
                 max_psl,
                 key
             );
@@ -447,8 +443,7 @@ static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
         u32 new_ex_capa = hashmap->ex_capa - 1;
         while (
             new_ex_capa > MAP_INIT_EXP_CAPACITY &&
-            hashmap->occ_slots <= (1U << new_ex_capa) * MAP_LOAD_FACTOR_LOWER
-        )
+            hashmap->occ_slots <= (1U << new_ex_capa) * MAP_LOAD_FACTOR_LOWER)
         {
             new_ex_capa -= 1;
         }
@@ -465,11 +460,10 @@ bool get_random_key(u8 *buffer, size_t buffer_len) {
 struct HashMap* hmap_init(size_t item_size, u32 init_capa, void (*clean_func)(void *)) {
     if (init_capa < MAP_INIT_EXP_CAPACITY) {
         init_capa = MAP_INIT_EXP_CAPACITY;
-    }
-    else if (init_capa > MAP_MAX_EXP_CAPACITY) {
+    } else if (init_capa > MAP_MAX_EXP_CAPACITY) {
         fprintf(
             stderr,
-            "cannot allocate a hash map with capacity over 2^%u.\n",
+            "Cannot allocate a hash map with capacity over 2^%u.\n",
             MAP_MAX_EXP_CAPACITY
         );
         return NULL;
@@ -520,7 +514,7 @@ bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data) {
         if (hashmap->ex_capa == MAP_MAX_EXP_CAPACITY) {
             fprintf(
                 stderr,
-                "hash map capacity cannot be increased over 2^%u.\n",
+                "Hash map capacity cannot be increased over 2^%u.\n",
                 MAP_MAX_EXP_CAPACITY
             );
             return false;
