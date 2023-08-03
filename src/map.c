@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <stdarg.h>
 
 #ifdef __linux__
 #include <sys/random.h>
@@ -70,19 +69,6 @@ struct Bucket {
 static u8 randkey[MAP_RAND_KEY_LEN];
 static u32 const max_psl = (1U << BUCKET_PSL_BITS) - 1;
 
-static void _clean_up(u32 allocs, void *ptr, ...) {
-    va_list args;
-
-    free(ptr);
-    va_start(args, ptr);
-
-    for (u32 i=1; i<allocs; ++i) {
-        void *p = va_arg(args, void *);
-        if (p != NULL) free(p);
-    }
-
-    va_end(args);
-}
 
 static bool _init_random_key(u8 *buf, size_t buflen) {
     if (buflen == 0) {
@@ -180,9 +166,10 @@ static struct HashMap* _hmap_init_common(u32 item_size, u32 ex_capa) {
     }
 
     hashmap->_temp = calloc(MAP_TEMP_SLOTS, hashmap->sz_slot);
-
+    
     if (hashmap->_temp == NULL) {
-        _clean_up(MAP_TEMP_SLOTS, hashmap->slots, hashmap);
+        free(hashmap->slots);
+        free(hashmap);
         return NULL;
     }
 
