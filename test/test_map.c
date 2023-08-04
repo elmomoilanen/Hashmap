@@ -290,7 +290,7 @@ static void test_hashmap_operations_small_size_many_insertions() {
     snprintf(last_key, sizeof last_key, "%s_%u", "key", elems);
     resp_struct = hmap_get(hashmap, last_key);
     assert(resp_struct != NULL);
-    assert(resp_struct->value_x == elems);
+    assert(resp_struct->value_x == (i32)elems);
 
     hmap_free(hashmap);
 
