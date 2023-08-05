@@ -2,9 +2,7 @@
 #define __MAP__
 
 #include "common.h"
-
-#define MAP_MAX_RAND_BUF_LEN 256
-#define MAP_RAND_KEY_LEN 16
+#include "siphash.h"
 
 #define MAP_INIT_EXP_CAPACITY 4
 #define MAP_MAX_EXP_CAPACITY 20
@@ -32,6 +30,7 @@ sz_bucket: size of the meta data struct in bytes.
 sz_key: maximal size of the key in bytes (null terminator must be included for this size).
 sz_item: data size, defined at initialization.
 sz_slot: slot size in bytes (a slot is given by one meta data unit, key and user data item).
+rand_key: random key used for the hash function.
 slots: starting address for the slots.
 _temp: starting address for the garbage data used internally by the hash map.
 clean_func: a function pointer doing necessary cleaning for user data. By default,
@@ -44,6 +43,7 @@ struct HashMap {
     u32 sz_key;
     u32 sz_item;
     u32 sz_slot;
+    u8 rand_key[HASH_RAND_KEY_LEN];
     void *slots;
     void *_temp;
     void (*clean_func)(void *);

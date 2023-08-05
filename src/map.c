@@ -10,7 +10,6 @@
 #endif
 
 #include "map.h"
-#include "siphash.h"
 
 #define MAP_LOAD_FACTOR_LOWER 0.4
 #define MAP_LOAD_FACTOR_UPPER 0.9
@@ -66,8 +65,7 @@ struct Bucket {
     u32 meta_data;
 };
 
-static u8 randkey[MAP_RAND_KEY_LEN];
-static u32 const max_psl = (1U << BUCKET_PSL_BITS) - 1;
+static u32 const MAX_PSL = (1U << BUCKET_PSL_BITS) - 1;
 
 
 static bool _init_random_key(u8 *buf, size_t buflen) {
@@ -75,11 +73,11 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
         fprintf(stderr, "Cannot init random key for zero bytes.\n");
         return false;
     }
-    if (buflen > MAP_MAX_RAND_BUF_LEN) {
+    if (buflen > HASH_MAX_RAND_BUF_LEN) {
         fprintf(
             stderr,
             "Cannot init random key with more than %u bytes.\n",
-            MAP_MAX_RAND_BUF_LEN
+            HASH_MAX_RAND_BUF_LEN
         );
         return false;
     }
@@ -118,7 +116,7 @@ static bool _init_random_key(u8 *buf, size_t buflen) {
     return init_success;
 }
 
-static u32 get_truncated_hash(char const *key) {
+static u32 get_truncated_hash(char const *key, u8 const randkey[HASH_RAND_KEY_LEN]) {
     u64 hash = siphash(key, strlen(key), randkey);
     return hash << BUCKET_HASH_TRUNC_SIZE >> BUCKET_HASH_TRUNC_SIZE;
 }
@@ -179,16 +177,11 @@ static struct HashMap* _hmap_init(
     void (*clean_func)(void *),
     bool use_random_key)
 {
-    size_t const rkey_len = sizeof(randkey) / sizeof(randkey[0]);
-
-    if (use_random_key) {
-        if (!_init_random_key(randkey, rkey_len)) {
-            return NULL; 
-        }
-    } else {
-        for (u32 i=0; i<rkey_len; ++i) {
-            randkey[i] = 0;
-        }
+    u8 rand_key[HASH_RAND_KEY_LEN] = {0};
+    size_t const rkey_len = sizeof(rand_key) / sizeof(rand_key[0]);
+    
+    if (use_random_key && !_init_random_key(rand_key, rkey_len)) {
+        return NULL;
     }
 
     struct HashMap *hashmap = _hmap_init_common(item_size, init_capa);
@@ -196,6 +189,8 @@ static struct HashMap* _hmap_init(
 
     hashmap->occ_slots = 0;
     hashmap->clean_func = clean_func;
+
+    memcpy(hashmap->rand_key, rand_key, sizeof(rand_key));
 
     return hashmap;
 }
@@ -269,7 +264,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
                     new_hashmap->sz_slot
                 );
             }
-            if (META_GET_PSL(bucket->meta_data) >= max_psl) {
+            if (META_GET_PSL(bucket->meta_data) >= MAX_PSL) {
                 // Maximal probe sequence length reached, unable to resize
                 free(new_hashmap->slots);
                 free(new_hashmap->_temp);
@@ -294,7 +289,7 @@ static bool _hmap_resize(struct HashMap *hashmap, u32 new_ex_capa) {
 }
 
 static void* _hmap_get(struct HashMap *hashmap, char const *key) {
-    u32 const hash_trunc = get_truncated_hash(key);
+    u32 const hash_trunc = get_truncated_hash(key, hashmap->rand_key);
     u32 const mask = (1U << hashmap->ex_capa) - 1;
     u32 idx = hash_trunc & mask, psl = 0;
 
@@ -316,7 +311,7 @@ static void* _hmap_get(struct HashMap *hashmap, char const *key) {
 }
 
 static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *data) {
-    u32 hash_trunc = get_truncated_hash(key);
+    u32 hash_trunc = get_truncated_hash(key, hashmap->rand_key);
     u32 const mask = (1U << hashmap->ex_capa) - 1;
     u32 idx = hash_trunc & mask, psl = 0;
 
@@ -378,11 +373,11 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
             hash_trunc = META_GET_HASH(((struct Bucket *)(hashmap->_temp))->meta_data);
             psl = META_GET_PSL(((struct Bucket *)(hashmap->_temp))->meta_data);
         }
-        if (psl >= max_psl) {
+        if (psl >= MAX_PSL) {
             fprintf(
                 stderr,
                 "Max probe sequence length %u reached, cannot insert key %s.\n",
-                max_psl,
+                MAX_PSL,
                 key
             );
             return false;
@@ -393,7 +388,7 @@ static bool _hmap_insert(struct HashMap *hashmap, char const *key, void const *d
 }
 
 static void* _hmap_remove(struct HashMap *hashmap, char const *key) {
-    u32 const hash_trunc = get_truncated_hash(key);
+    u32 const hash_trunc = get_truncated_hash(key, hashmap->rand_key);
     u32 const mask = (1U << hashmap->ex_capa) - 1;
     u32 idx = hash_trunc & mask, psl = 0;
 

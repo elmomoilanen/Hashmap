@@ -98,6 +98,7 @@ static void test_value_get_macro() {
 }
 
 static void test_hashmap_init() {
+    // uses deterministic random key which is all zeros
     struct HashMap *hashmap = hmap_init_with_key(sizeof(test_type_a), NULL);
 
     assert(hashmap != NULL);
@@ -108,6 +109,14 @@ static void test_hashmap_init() {
     assert(hashmap->clean_func == NULL);
 
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
+
+    assert(hashmap->rand_key != NULL);
+    size_t const rand_key_len = sizeof(hashmap->rand_key) / sizeof(hashmap->rand_key[0]);
+    assert(rand_key_len == HASH_RAND_KEY_LEN);
+
+    for (size_t i=0; i<rand_key_len; ++i) {
+        assert(hashmap->rand_key[i] == 0U);
+    }
 
     hmap_free(hashmap);
 
@@ -125,6 +134,20 @@ static void test_hashmap_init_with_random_key() {
     assert(hashmap->clean_func == NULL);
 
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
+
+    assert(hashmap->rand_key != NULL);
+    size_t const rand_key_len = sizeof(hashmap->rand_key) / sizeof(hashmap->rand_key[0]);
+    assert(rand_key_len == HASH_RAND_KEY_LEN);
+
+    bool all_zeros = true;
+    // It is very unlikely that the random key is all zeros.
+    for (size_t i=0; i<rand_key_len; ++i) {
+        if (hashmap->rand_key[i] != 0U) {
+            all_zeros = false;
+            break;
+        }
+    }
+    assert(!all_zeros);
 
     hmap_free(hashmap);
 

@@ -6,10 +6,10 @@
 
 
 static void test_getting_random_bytes() {
-    assert(MAP_RAND_KEY_LEN > 0);
-    assert(MAP_RAND_KEY_LEN < MAP_MAX_RAND_BUF_LEN);
+    assert(HASH_RAND_KEY_LEN > 0);
+    assert(HASH_RAND_KEY_LEN < HASH_MAX_RAND_BUF_LEN);
 
-    u8 randkey[MAP_RAND_KEY_LEN] = {0};
+    u8 randkey[HASH_RAND_KEY_LEN] = {0};
     size_t const key_len = sizeof(randkey) / sizeof(randkey[0]);
 
     bool good_response = get_random_key(randkey, key_len);
@@ -29,7 +29,7 @@ static void test_getting_random_bytes_zero_length_buffer() {
 }
 
 static void test_getting_random_bytes_max_allowed_buffer() {
-    u8 randkey[MAP_MAX_RAND_BUF_LEN] = {0};
+    u8 randkey[HASH_MAX_RAND_BUF_LEN] = {0};
     size_t const key_len = sizeof(randkey) / sizeof(randkey[0]);
 
     bool good_response = get_random_key(randkey, key_len);
@@ -39,7 +39,7 @@ static void test_getting_random_bytes_max_allowed_buffer() {
 }
 
 static void test_getting_random_bytes_oversized_buffer() {
-    #define BUFFER_SIZE ((MAP_MAX_RAND_BUF_LEN) + 1)
+    #define BUFFER_SIZE ((HASH_MAX_RAND_BUF_LEN) + 1)
 
     u8 randkey[BUFFER_SIZE] = {0};
     size_t const key_len = sizeof(randkey) / sizeof(randkey[0]);

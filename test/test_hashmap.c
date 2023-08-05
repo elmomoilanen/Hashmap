@@ -363,6 +363,40 @@ static void test_hashmap_readme_example() {
     PRINT_SUCCESS(__func__);
 }
 
+static void test_hashmap_two_hashmaps() {
+    struct HashMap *hashmap1 = hashmap_init(sizeof(Temperature), NULL);
+    Temperature temp1_18 = {.kelvin = 293.15, .hour = 12, .mins = 0};
+    assert(hashmap_insert(hashmap1, "1.8.2021", &temp1_18) == true);
+
+    struct HashMap *hashmap2 = hashmap_init(sizeof(Temperature), NULL);
+    Temperature temp2_18 = {.kelvin = 283.15, .hour = 15, .mins = 30};
+    assert(hashmap_insert(hashmap2, "1.8.2021", &temp2_18) == true);
+
+    Temperature *t1_18 = hashmap_get(hashmap1, "1.8.2021");
+    assert(t1_18 != NULL);
+    assert(t1_18->kelvin - temp1_18.kelvin < 0.01);
+    assert(t1_18->hour == 12);
+    assert(t1_18->mins == 0);
+
+    Temperature *t2_18 = hashmap_get(hashmap2, "1.8.2021");
+    assert(t2_18 != NULL);
+    assert(t2_18->kelvin - temp2_18.kelvin < 0.01);
+    assert(t2_18->hour == 15);
+    assert(t2_18->mins == 30);
+
+    assert(hashmap_remove(hashmap1, "1.8.2021") != NULL);
+    assert(hashmap_get(hashmap1, "1.8.2021") == NULL);
+
+    hashmap_free(hashmap1);
+
+    assert(hashmap_remove(hashmap2, "1.8.2021") != NULL);
+    assert(hashmap_get(hashmap2, "1.8.2021") == NULL);
+
+    hashmap_free(hashmap2);
+
+    PRINT_SUCCESS(__func__);
+}
+
 
 test_func hashmap_tests[] = {
     {"complete_hashmap", test_complete_hashmap},
@@ -374,5 +408,6 @@ test_func hashmap_tests[] = {
     {"hashmap_iter_apply_keys", test_hashmap_iter_apply_keys},
     {"hashmap_iter_apply_data_mutation", test_hashmap_iter_apply_data_mutation},
     {"hashmap_readme_example", test_hashmap_readme_example},
+    {"hashmap_two_hashmaps", test_hashmap_two_hashmaps},
     {NULL, NULL},
 };

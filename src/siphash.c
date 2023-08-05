@@ -123,6 +123,6 @@ static u64 _siphash(u8 const *in, size_t const in_len, u8 const *key) {
     return out;
 }
 
-u64 siphash(void const *data, size_t data_len, u8 const key[16]) {
+u64 siphash(void const *data, size_t data_len, u8 const key[HASH_RAND_KEY_LEN]) {
     return _siphash((u8 *)data, data_len, key);
 }
