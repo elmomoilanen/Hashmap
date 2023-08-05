@@ -6,13 +6,13 @@ Library implementing the hash map data structure with open addressing and robin 
 
 Library design limits key size to 19 bytes, with the 20th byte reserved for the null character. This implementation choice was made because the library primarily serves small scale needs, and longer keys would seem redundant with respect to this purpose. Additionally, a more compact memory layout for the hash map can be achieved with fixed key size boundaries.
 
-The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for the key (as previously discussed), and x bytes for the data item. The size of the data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, but they are handled by the library and should not significantly impact the user experience. See the API summary section below for more details. Note that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be introduced.
+The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for the key (as previously discussed), and x bytes for the data item. The size of the data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, but they are handled by the library and should not significantly impact the user experience. See the API summary section below for more details. Notice that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
 
 The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserved flag, 11 bits for probe sequence length (PSL), and 20 bits for truncated hash value) | key (20 bytes, with the last byte reserved for the null character) | data item (x bytes, determined at initialization). The metadata is represented as an unsigned integer and its specific bits are manipulated using bitwise operations. Given the limited capacity of the hash map, 11 bits for PSL and 20 bits for hash value are sufficient.
 
 ## Build ##
 
-The library is expected to work on most common Linux distros (e.g. Ubuntu) and macOS. Note that for macOS, the compiler parameter may need to be changed to clang (CC=clang). Library uses the C11 standard and the main code uses calloc allocator, while the tests also use the malloc allocator.
+This library is expected to work on most common Linux distros (e.g. Ubuntu) and macOS. Note that for macOS, the compiler parameter may need to be changed to clang (CC=clang). Library uses the C11 standard and the main code uses the calloc allocator, while the tests also use the malloc allocator.
 
 To build the library, run unit tests, and clean up unneeded object files, run the following command
 
@@ -49,11 +49,12 @@ This command compiles a `test_prog.c` source code file that uses the library. Th
 ```C
 #include <assert.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "hashmap.h"
 
-typedef unsigned int u32;
+typedef uint32_t u32;
 typedef float f32;
 
 typedef struct {
@@ -135,7 +136,7 @@ Here is a short summary for some of the most important details related to this i
 
 - Insert a data item to the hash map by `hashmap_insert`
 
-    For every insertion, the hash map makes itself a shallow copy of the passed data item and key. A successful insertion returns `true`, while a failed insertion returns `false` which occurs if the key size exceeds 19 bytes, the hash map fails to resize e.g. due to reaching its maximal capacity or when the maximal probe sequence length is reached as specified in the metadata (11 bits reserved for PSL values).
+    For every insertion, the hash map makes itself a shallow copy of the passed data item and key. A successful insertion returns `true`, while a failed insertion returns `false` which occurs if the key size exceeds 19 bytes, the hash map fails to resize due to reaching its maximal capacity or when the maximal probe sequence length is reached as specified in the metadata (11 bits reserved for PSL value).
 
     For complex data types that contain pointers to memory locations, insertion calls increase the reference count to these memory locations.
 
