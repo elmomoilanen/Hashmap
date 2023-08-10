@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wno-implicit-fallthrough -Wextra -Werror -std=c11 -g -O3
+CFLAGS=-Wall -Wno-implicit-fallthrough -Wextra -Werror -std=c11 -O3
 
 PREFIX ?= /usr/local
 
