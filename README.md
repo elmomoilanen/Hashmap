@@ -2,33 +2,37 @@
 
 [![main](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml/badge.svg)](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml)
 
-Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function. For more information on this algorithm, see the reference C implementation [SipHash](https://github.com/veorq/SipHash).
+Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function (see the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more info). Key size is limited to 19 bytes, with the 20th byte reserved for the null character. This design choice enables a more compact memory layout for the hash map.
 
-Library design limits key size to 19 bytes, with the 20th byte reserved for the null character. This implementation choice was made because the library primarily serves small scale needs, and longer keys would seem redundant with respect to this purpose. Additionally, a more compact memory layout for the hash map can be achieved with fixed key size boundaries.
+The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for a key (as mentioned above), and x bytes for a data item. Size of a data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, like for example the maximal slot count, but they are handled by the library and should not significantly impact the user experience (see the API summary section below for more info). Also notice that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
 
-The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for the key (as previously discussed), and x bytes for the data item. The size of the data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, but they are handled by the library and should not significantly impact the user experience. See the API summary section below for more details. Notice that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
-
-The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserved flag, 11 bits for probe sequence length (PSL), and 20 bits for truncated hash value) | key (20 bytes, with the last byte reserved for the null character) | data item (x bytes, determined at initialization). The metadata is represented as an unsigned integer and its specific bits are manipulated using bitwise operations. Given the limited capacity of the hash map, 11 bits for PSL and 20 bits for hash value are sufficient.
+The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserved flag, 11 bits for probe sequence length (PSL), and 20 bits for truncated hash value) | key (20 bytes: last byte reserved for the null character) | data item (x bytes: determined at initialization). Given the restricted maximal capacity of the hash map, 11 bits for PSL and 20 bits for hash value are sufficient.
 
 ## Build ##
 
-This library is expected to work on most common Linux distros (e.g. Ubuntu) and macOS. Note that for macOS, the compiler parameter may need to be changed to clang (CC=clang). Library uses the C11 standard and the main code uses the calloc allocator, while the tests also use the malloc allocator.
+This library uses the C11 standard. It is expected to work on most common Linux distros and macOS.
 
-To build the library, run unit tests, and clean up unneeded object files, run the following command
+To build the library, run 
 
 ```bash
-make && make test && make clean
+make
 ```
 
-If the build is successful, a static library file named `libhashmap.a` will be created in the current directory. This is all what you need in order to start using this library and may hence continue to the next section about the usage.
+If the build is successful, a static library file named `libhashmap.a` will be created in the current directory.
 
-Optionally to the previous combined make command, the following command installs the library and header file in the system directories specified by the PREFIX variable, which defaults to /usr/local in the Makefile
+Tests can be run as follows
+
+```bash
+make test
+```
+
+Optionally to the previous make command, the following command installs the library and header file in the system directories specified by the PREFIX variable, which defaults to /usr/local in the Makefile
 
 ```bash
 make install
 ```
 
-To uninstall, run the command
+To uninstall, run
 
 ```bash
 make uninstall
@@ -44,7 +48,9 @@ To compile a source code file that uses this library, specify the include path f
 gcc test_prog.c -I./include -L. -lhashmap -o test_prog -Wall -Wextra -Werror -std=c11 -g
 ```
 
-This command compiles a `test_prog.c` source code file that uses the library. The contents of the source code file could be similar to
+would compile a `test_prog.c` source code file that uses this library.
+
+Following code section gives a concrete example of how to use this library.
 
 ```C
 #include <assert.h>
@@ -64,7 +70,7 @@ typedef struct {
 } Temperature;
 
 int main() {
-    // Use default init size 16 open slots and no specific clean up function
+    // Use default initial capacity 16 open slots and no specific clean up function
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
 
     Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
@@ -75,22 +81,22 @@ int main() {
     hashmap_insert(hashmap, "1.8.2021", &temp_18);
     hashmap_insert(hashmap, "2.8.2021", &temp_28);
 
-    // Print some internal statistics to stdout, e.g. the load factor is 2/16 now
+    // Print some internal statistics to stdout, e.g. the load factor is now 2/16
     hashmap_stats_summary(hashmap);
     hashmap_stats_traverse(hashmap);
 
     // Get back a reference to data and check that it has remained correct
-    // t_18 is safe to use until the next hash map insertion or removal call
+    // t_18 is safe to use until the next hash map insertion or removal operation
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
     assert(t_18->kelvin - temp_18.kelvin < 0.01);
 
-    // Remove the same data item (ignoring the return value for now)
+    // Remove the data item (ignoring the return value for now)
     hashmap_remove(hashmap, "1.8.2021");
     
     assert(hashmap_get(hashmap, "1.8.2021") == NULL);
     // Notice that previous t_18 is currently a dangling pointer
 
-    // Finally, clean up memory used by the hash map struct
+    // Finally, clean up memory
     hashmap_free(hashmap);
 }
 ```
@@ -130,9 +136,9 @@ Here is a short summary for some of the most important details related to this i
 
 - Initialise a new hash map by `hashmap_init` or `hashmap_init_with_size`
 
-    A new hash map can be initialised to a default size (slot count) by hashmap_init, or to meet an initial size requirement by hashmap_init_with_size. The size of one data item must be passed as an argument during initialisation and cannot exceed approximately 2^32 bytess. If specific memory cleanup is required, a custom cleanup function can be given as argument.
+    A new hash map can be initialised to a default size (slot count) by hashmap_init, or to meet an initial size requirement by hashmap_init_with_size. The size of one data item must be passed as an argument during initialisation and cannot exceed approximately 2^32 bytes. If specific memory cleanup is required, a custom cleanup function can be given as argument.
 
-    Returned hash map struct has an upper bound for its total capacity but this bound is over one million slots. Capacity will grow exponentially (as powers of two) if the load factor exceeds 90%. Conversely, if the load factor falls below 40%, the capacity of the hash map will shrink, but this can only occur when data items are removed from the hash map.
+    Returned hash map struct has an upper bound for its total capacity but this bound is over one million (2^20) slots. Capacity will grow exponentially (as powers of two) if the load factor exceeds 90%. Conversely, if the load factor falls below 40%, the capacity of the hash map will shrink, but this can only occur when data items are removed from the hash map (i.e., shrinkage can only happen during removal operation).
 
 - Insert a data item to the hash map by `hashmap_insert`
 
@@ -146,7 +152,7 @@ Here is a short summary for some of the most important details related to this i
 
 - Get a data item from the hash map by `hashmap_get`
 
-    This is a reference to the data item (NULL, if not found) stored in the hash map previously as a shallow copy of the original data item. It has a limited lifetime and should only be used prior to the next insertion or removal operation, as the hash map may resize during these operations and the reference may become invalid.    
+    This is a reference to the data item (NULL, if not found) stored in the hash map as a shallow copy of the original data item. It has a limited lifetime and should only be used prior to the next insertion or removal operation, as the hash map may resize during these operations and the reference may become invalid.    
 
 - Remove a data item from the hash map by `hashmap_remove`
 
