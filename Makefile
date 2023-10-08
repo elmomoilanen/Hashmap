@@ -13,7 +13,7 @@ TEST_TARGET=hashmap_test
 
 .PHONY:all clean test install uninstall help
 
-all: $(TARGET) $(TEST_TARGET)
+all: $(TARGET) clean
 
 $(OBJS): $(SRC)
 	$(CC) $(CFLAGS) -c -Isrc/ -Iinclude/ $(SRC)
@@ -27,7 +27,7 @@ $(TEST_TARGET): $(OBJS) $(TEST_OBJS)
 $(TARGET): $(OBJS)
 	ar rcs $(TARGET) $(OBJS)
 
-test: $(TEST_TARGET)
+test: $(TEST_TARGET) clean
 	./$(TEST_TARGET)
 
 install: $(TARGET)
@@ -42,13 +42,13 @@ uninstall:
 	rm -rf $(PREFIX)/include/hashmap/
 
 clean:
-	rm -r $(OBJS) $(TEST_OBJS) $(TEST_TARGET)
+	rm -f $(OBJS) $(TEST_OBJS)
 
 help:
-	@echo "Available targets:"
-	@echo " all          - Build the library and test binary"
-	@echo " test         - Run the test binary"
-	@echo " install      - Install the library and header files to system directories specified by PREFIX"
-	@echo " uninstall    - Remove files installed by the 'install' target"
-	@echo " clean        - Remove object and binary files"
-	@echo " help         - Display this help message"
+	@echo "Available targets:\n"
+	@echo "all          - Build the library"
+	@echo "test         - Build and run tests"
+	@echo "install      - Install the library and header files to system directories specified by PREFIX"
+	@echo "uninstall    - Remove files installed by the 'install' target"
+	@echo "clean        - Remove all object files"
+	@echo "help         - Display this help message"
