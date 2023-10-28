@@ -10,7 +10,7 @@ The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserve
 
 ## Build ##
 
-This library uses the C11 standard. It is expected to work on most common Linux distros and macOS.
+This library uses the C11 standard and `calloc` as the memory allocator for allocating memory dynamically. It is expected to work on most common Linux distros and macOS.
 
 To build the library, run 
 
