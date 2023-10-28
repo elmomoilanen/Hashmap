@@ -180,7 +180,8 @@ bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, 
 /*
 Traverse slots of the hash map.
 
-Prints the starting address of each slot and whether the slot is occupied or not.
+Prints the starting address of each slot (in virtual memory) and whether the slot
+is occupied or not.
 
 Params:
     hashmap: HashMap struct
