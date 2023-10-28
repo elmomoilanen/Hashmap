@@ -52,7 +52,7 @@ static void test_complete_hashmap() {
         assert(hashmap_insert(hashmap, key, &measurement) == true);
     }
 
-    // remove few measurements
+    // removal operation
     u32 key_i = 50, key_i2 = 100;
     char key_rem[10], key_rem2[10];
     snprintf(key_rem, sizeof key_rem, "%s_%u", "key", key_i);
@@ -65,13 +65,13 @@ static void test_complete_hashmap() {
 
     assert(hashmap_remove(hashmap, key_rem2) != NULL);
 
-    // run get operation for the rest of the measurement
+    // get operation
     for (u32 j=1; j<=elems; ++j) {
         char key[10];
         snprintf(key, sizeof key, "%s_%u", "key", j);
 
         if (j == key_i || j == key_i2) {
-            // removed items shouldn't been there anynore
+            // removed items shouldn't been there anymore
             assert(hashmap_get(hashmap, key) == NULL);
             continue;
         }
@@ -115,7 +115,7 @@ static void test_complete_hashmap_mid_size() {
     assert(hashmap->ex_capa == 10);
     assert(hashmap->occ_slots == elems);
 
-    // run get operations
+    // get operations
     for (i32 i=elems; i>0; --i) {
         char key[10];
         snprintf(key, sizeof key, "%s_%d", "key", i);
@@ -138,12 +138,10 @@ static void test_complete_hashmap_mid_size() {
         assert(m_back->val_x == i);
         assert(m_back->val_y == i);
         assert(strcmp(m_back->name, "condition") == 0);
-
-        // measurement should have removed by now
         assert(hashmap_get(hashmap, key) == NULL);
     }
     assert(hashmap->occ_slots == 0);
-    // no elements, the capacity should be now the smallest allowed
+    // no elements left, capacity should be now the smallest allowed
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
 
     hashmap_free(hashmap);
@@ -155,8 +153,7 @@ static void test_complete_hashmap_oversize_init() {
     size_t const type_size = sizeof(struct Measurement);
     size_t const init_elems = 1050000;
 
-    // requested storage (element count) larger than maximal allowed capacity
-
+    // requested storage (element count) is larger than maximal allowed capacity
     struct HashMap *hashmap = hashmap_init_with_size(type_size, init_elems, NULL);
     assert(hashmap == NULL);
 
@@ -244,7 +241,7 @@ static void test_hashmap_iter_apply() {
 
         assert(hashmap_insert(hashmap, key, &temp) == true);
     }
-    // Test that all slots were visited and returned true
+    // Test that all slots are visited and return true
     assert(hashmap_iter_apply(hashmap, custom_callback) == true);
     assert(iter_visited_counter == data_items);
 

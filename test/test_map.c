@@ -213,7 +213,7 @@ static void test_hashmap_misc_operations_small_size() {
     assert(
         hmap_insert(hashmap, "key_is_there", &(test_type_a){.value_x=-1, .value_y=0, .text="testing"})
     );
-    // next key is the longest allowed
+    // next used key is the longest allowed
     assert(
         hmap_insert(hashmap, "key_is_there_other_", &(test_type_a){.value_x=0, .value_y=0, .text="testing"})
     );
@@ -228,7 +228,7 @@ static void test_hashmap_misc_operations_small_size() {
         hmap_insert(hashmap, "key_is_there_other__", &(test_type_a){.value_x=0, .value_y=0, .text="test"})
         == false
     );
-    // invalid keys, should't been anything for return
+    // invalid keys
     assert(hmap_get(hashmap, "key_is_there_other__") == NULL);
     assert(hmap_get(hashmap, NULL) == NULL);
 
@@ -448,8 +448,7 @@ static void test_hashmap_resizing_down() {
     assert(hashmap->occ_slots == 1);
     assert(hashmap->ex_capa == init_exp);
 
-    // following removal should drop the size of the hashmap to lowest possible
-
+    // following removal should drop the size of the hashmap to the lowest possible
     test_type_a *test_struct = hmap_remove(hashmap, "key");
     assert(test_struct != NULL);
 
@@ -560,8 +559,7 @@ static void test_hashmap_misc_operations_mid_size() {
     assert(hashmap->occ_slots == elems);
     assert(hashmap->ex_capa == init_exp);
 
-    // remove elems such that the size will drop down
-
+    // remove elements such that the size will drop down
     for (u32 i=21; i<=elems; ++i) {
         char key[10];
         snprintf(key, sizeof key, "%s_%u", "key", i);
@@ -570,8 +568,8 @@ static void test_hashmap_misc_operations_mid_size() {
         assert(resp != NULL);
     }
     assert(hashmap->ex_capa == init_exp - 1);
-    assert(elems == 50); // just to make sure that following correct
-    // test few keys
+    assert(elems == 50);
+
     assert(hmap_get(hashmap, "key_30") == NULL);
     assert(hmap_get(hashmap, "key_50") == NULL);
 
@@ -583,7 +581,7 @@ static void test_hashmap_misc_operations_mid_size() {
 }
 
 static void test_hashmap_integer_data() {
-    // test hashmap for type int32_t
+    // test hashmap for type int32_t (i32 is a type alias)
     struct HashMap *hashmap = hmap_init_with_key(sizeof(i32), NULL);
     assert(hashmap != NULL);
 
@@ -715,7 +713,7 @@ static void test_hashmap_custom_allocation_and_free() {
 
     hmap_free(hashmap);
 
-    // check that the custom clean up was really called
+    // check that the custom clean up function was called
     assert(custom_clean_vec_call_counter == 1);
 
     // hmap_free followed vec->data and freed it, must not free it anymore
@@ -738,7 +736,6 @@ static void test_hashmap_custom_allocation_with_remove() {
 
     custom_clean_vec_call_counter = 0;
 
-    // pass a custom clean up function
     struct HashMap *hashmap = hmap_init_with_key(sizeof *vec, custom_clean_vec);
     assert(hashmap != NULL);
 
@@ -778,10 +775,10 @@ static void test_hashmap_custom_allocation_with_remove_and_resize() {
     vec2->size = data_size;
 
     custom_clean_vec_call_counter = 0;
+    
+    // use init capacity 2^5
+    u32 const init_capa = 5;
 
-    u32 const init_capa = 5; // use init capacity 2^5
-
-    // pass a custom clean up function
     struct HashMap *hashmap = hmap_init(sizeof *vec, init_capa, custom_clean_vec);
     assert(hashmap != NULL);
 
