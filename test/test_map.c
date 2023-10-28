@@ -649,11 +649,11 @@ static void test_hashmap_array_data() {
 }
 
 static void test_hashmap_custom_allocation() {
-    struct vector *vec = malloc(1 * sizeof *vec);
+    struct vector *vec = calloc(1, sizeof *vec);
     assert(vec != NULL);
 
     u32 const data_size = 25;
-    vec->data = malloc(data_size * sizeof(*vec->data));
+    vec->data = calloc(data_size, sizeof(*vec->data));
     assert(vec->data != NULL);
 
     vec->capacity = data_size;
@@ -693,11 +693,11 @@ void custom_clean_vec(void *data_item) {
 }
 
 static void test_hashmap_custom_allocation_and_free() {
-    struct vector *vec = malloc(1 * sizeof *vec);
+    struct vector *vec = calloc(1, sizeof *vec);
     assert(vec != NULL);
 
     u32 const data_size = 5;
-    vec->data = malloc(data_size * sizeof(*vec->data));
+    vec->data = calloc(data_size, sizeof(*vec->data));
     assert(vec->data != NULL);
 
     vec->capacity = data_size;
@@ -725,11 +725,11 @@ static void test_hashmap_custom_allocation_and_free() {
 }
 
 static void test_hashmap_custom_allocation_with_remove() {
-    struct vector *vec = malloc(1 * sizeof *vec);
+    struct vector *vec = calloc(1, sizeof *vec);
     assert(vec != NULL);
 
     u32 const data_size = 3;
-    vec->data = malloc(data_size * sizeof(*vec->data));
+    vec->data = calloc(data_size, sizeof(*vec->data));
     assert(vec->data != NULL);
 
     vec->capacity = data_size;
@@ -761,8 +761,8 @@ static void test_hashmap_custom_allocation_with_remove() {
 }
 
 static void test_hashmap_custom_allocation_with_remove_and_resize() {
-    struct vector *vec = malloc(1 * sizeof *vec);
-    struct vector *vec2 = malloc(1 * sizeof *vec2);
+    struct vector *vec = calloc(1, sizeof *vec);
+    struct vector *vec2 = calloc(1, sizeof *vec2);
     assert(vec != NULL);
     assert(vec2 != NULL);
 
