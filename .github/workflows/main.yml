@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '15 19 3 * *'
 
 jobs:
   build:
@@ -21,7 +23,7 @@ jobs:
           COMPILER: gcc
           NAME: linux
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Env setup
       if: ${{ matrix.NAME == 'linux' }}
       run: |
