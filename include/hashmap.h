@@ -135,13 +135,16 @@ Returns:
 void* hashmap_remove(struct HashMap *hashmap, char const *key);
 
 /*
-Clean up memory used by the hash map.
+Free the memory allocated for the hash map.
+
+After calling this function, subsequent attempts to access the hash map struct
+will result in undefined behaviour.
 
 If no custom clean up function were passed during initialisation, cleaning
 process will be kind of dummy, i.e., just freeing the slots, temporary storage
 and the HashMap struct itself. Thus, in this case, if the data items contained
 pointers to other memory addresses with allocated objects/data, the user remains
-responsible to clean up those.
+responsible for cleaning up those.
 
 Otherwise, with custom clean up function given, this function is called for each
 data item stored in the hash map. E.g., in the example given for `hashmap_insert`
@@ -176,6 +179,19 @@ Returns:
     bool: true if the hash map was completely iterated through, false otherwise.
 */
 bool hashmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void *));
+
+/*
+Get the current length of the hash map.
+
+This is the count of occupied slots in the hash map.
+
+Params:
+    hashmap: HashMap struct
+
+Returns:
+    u32: count of occupied slots in the hash map
+*/
+u32 hashmap_len(struct HashMap *hashmap);
 
 /*
 Traverse slots of the hash map.

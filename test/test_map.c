@@ -169,6 +169,7 @@ static void test_empty_hashmap_metadata() {
     assert(hashmap != NULL);
     assert(hashmap->occ_slots == 0);
     assert(get_occupied_slot_count(hashmap) == 0);
+    assert(hmap_len(hashmap) == 0);
 
     hmap_free(hashmap);
 
@@ -187,6 +188,7 @@ static void test_hashmap_operations_small_size() {
     response = hmap_insert(hashmap, "elem2", &test_struct2);
     assert(response == true);
     assert(hashmap->occ_slots == 2);
+    assert(hmap_len(hashmap) == 2);
 
     test_type_a *resp_struct;
 
@@ -289,8 +291,7 @@ static void test_hashmap_operations_small_size_many_insertions() {
         assert(response == true);
     }
 
-    assert(hashmap->occ_slots == elems);
-    assert(hashmap->occ_slots == get_occupied_slot_count(hashmap));
+    assert(hmap_len(hashmap) == elems);
 
     for (u32 i=1; i<=elems; ++i) {
         char key[10];
@@ -332,6 +333,8 @@ static void test_hashmap_init_to_specific_size() {
 
     assert(hashmap->ex_capa == init_exp);
 
+    assert(hmap_len(hashmap) == 0);
+
     hmap_free(hashmap);
 
     PRINT_SUCCESS(__func__);
@@ -363,22 +366,21 @@ static void test_hashmap_element_removal() {
     hmap_insert(hashmap, "key_2", &(test_type_a){.value_x=2, .value_y=2, .text="test"});
     hmap_insert(hashmap, "key_3", &(test_type_a){.value_x=3, .value_y=3, .text="test"});
 
-    assert(hashmap->occ_slots == 3);
+    assert(hmap_len(hashmap) == 3);
 
     test_type_a *test_struct = hmap_remove(hashmap, "key_2");
     assert(test_struct != NULL);
     assert(test_struct->value_x == 2);
-    assert(hashmap->occ_slots == 2);
-    assert(hashmap->occ_slots == get_occupied_slot_count(hashmap));
+    assert(hmap_len(hashmap) == 2);
 
     test_struct = hmap_remove(hashmap, "key_2");
     assert(test_struct == NULL);
-    assert(hashmap->occ_slots == 2);
+    assert(hmap_len(hashmap) == 2);
 
     test_struct = hmap_remove(hashmap, "key_1");
     assert(test_struct != NULL);
     assert(test_struct->value_x == 1);
-    assert(hashmap->occ_slots == 1);
+    assert(hmap_len(hashmap) == 1);
 
     assert(hmap_get(hashmap, "key_2") == NULL);
     assert(hmap_get(hashmap, "key_1") == NULL);
@@ -408,6 +410,7 @@ static void test_hashmap_resizing_up() {
     }
 
     assert(hashmap->occ_slots == elems);
+    assert(hmap_len(hashmap) == elems);
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY + 1);
 
     hmap_free(hashmap);
@@ -423,12 +426,12 @@ static void test_hashmap_resizing_up_and_down() {
     assert(hashmap->ex_capa == init_exp);
 
     hmap_insert(hashmap, "key", &(test_type_a){.value_x=0, .value_y=0, .text="test"});
-    assert(hashmap->occ_slots == 1);
+    assert(hmap_len(hashmap) == 1);
 
     test_type_a *test_struct = hmap_remove(hashmap, "key");
     assert(test_struct != NULL);
 
-    assert(hashmap->occ_slots == 0);
+    assert(hmap_len(hashmap) == 0);
     assert(hashmap->ex_capa == init_exp - 1);
 
     hmap_free(hashmap);
@@ -445,14 +448,14 @@ static void test_hashmap_resizing_down() {
 
     hmap_insert(hashmap, "key", &(test_type_a){.value_x=0, .value_y=0, .text="test"});
 
-    assert(hashmap->occ_slots == 1);
+    assert(hmap_len(hashmap) == 1);
     assert(hashmap->ex_capa == init_exp);
 
     // following removal should drop the size of the hashmap to the lowest possible
     test_type_a *test_struct = hmap_remove(hashmap, "key");
     assert(test_struct != NULL);
 
-    assert(hashmap->occ_slots == 0);
+    assert(hmap_len(hashmap) == 0);
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
 
     hmap_free(hashmap);

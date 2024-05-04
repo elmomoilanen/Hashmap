@@ -2,7 +2,7 @@
 
 [![main](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml/badge.svg)](https://github.com/elmomoilanen/Hashmap/actions/workflows/main.yml)
 
-Library implementing the hash map data structure with open addressing and robin hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function (see the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more info). Key size is limited to 19 bytes, with the 20th byte reserved for the null character. This design choice enables a more compact memory layout for the hash map.
+Library implementing a hash map data structure with open addressing and Robin Hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function (see the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more info). Key size is limited to 19 bytes, with the 20th byte reserved for the null character. This design choice enables a more compact memory layout for the hash map.
 
 The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for a key (as mentioned above), and x bytes for a data item. Size of a data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, like for example the maximal slot count, but they are handled by the library and should not significantly impact the user experience (see the API summary section below for more info). Also notice that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
 
@@ -60,17 +60,14 @@ Following code section gives a concrete example of how to use this library.
 
 #include "hashmap.h"
 
-typedef uint32_t u32;
-typedef float f32;
-
 typedef struct {
-    f32 kelvin;
-    u32 hour;
-    u32 mins;
+    float kelvin;
+    uint32_t hour;
+    uint32_t mins;
 } Temperature;
 
 int main() {
-    // Use default initial capacity 16 open slots and no specific clean up function
+    // Use default initial capacity of 16 open slots and no specific clean up function
     struct HashMap *hashmap = hashmap_init(sizeof(Temperature), NULL);
 
     Temperature temp_18 = {.kelvin=293.15, .hour=12, .mins=0};
@@ -85,18 +82,25 @@ int main() {
     hashmap_stats_summary(hashmap);
     hashmap_stats_traverse(hashmap);
 
-    // Get back a reference to data and check that it has remained correct
+    // Get back a reference to data and update its kelvin value
     // t_18 is safe to use until the next hash map insertion or removal operation
     Temperature *t_18 = hashmap_get(hashmap, "1.8.2021");
-    assert(t_18->kelvin - temp_18.kelvin < 0.01);
+    float updated_kelvin = 291.50;
+    t_18->kelvin = updated_kelvin;
 
-    // Remove the data item (ignoring the return value for now)
-    hashmap_remove(hashmap, "1.8.2021");
-    
+    // Remove the first day and get a temporary pointer to the data
+    t_18 = hashmap_remove(hashmap, "1.8.2021");
+    assert(t_18->kelvin - updated_kelvin < 0.01);
+
+    // Insert new temperature data
+    hashmap_insert(hashmap, "3.8.2021", &(Temperature){.kelvin=297.0, .hour=12, .mins=0});
+
+    // Notice that after insert call t_18 is a dangling pointer
+    // Verify removal of the first day
     assert(hashmap_get(hashmap, "1.8.2021") == NULL);
-    // Notice that previous t_18 is currently a dangling pointer
+    assert(hashmap_len(hashmap) == 2);
 
-    // Finally, clean up memory
+    // Finally, clean up all memory allocated by the hash map
     hashmap_free(hashmap);
 }
 ```
@@ -146,24 +150,28 @@ Here is a short summary for some of the most important details related to this i
 
     For complex data types that contain pointers to memory locations, insertion calls increase the reference count to these memory locations.
 
-- Show internal hash map struct statistics by `hashmap_stats_summary` and `hashmap_stats_traverse`
-
-    For the former function, current total capacity, occupied slot count, the size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter, the whole hash map will be traversed and metadata information for each slot is printed to stdout.
-
 - Get a data item from the hash map by `hashmap_get`
 
-    This is a reference to the data item (NULL, if not found) stored in the hash map as a shallow copy of the original data item. It has a limited lifetime and should only be used prior to the next insertion or removal operation, as the hash map may resize during these operations and the reference may become invalid.    
+    This is a reference to the data item (or NULL, if not found) stored in the hash map as a shallow copy of the original data item. It has a limited lifetime and should only be used prior to the next insertion or removal operation, as the hash map may resize during these operations and the reference may become invalid.    
 
 - Remove a data item from the hash map by `hashmap_remove`
 
     The data associated with the given key will be removed from the hash map if it is found. In this case, a reference to the data item is returned, but it refers to a temporary location that is used internally by the hash map structure. This reference is only valid until the next operation on the hash map is performed. If the key is not found, NULL is returned.
     
-- To clean up the used memory by `hashmap_free`
+- Free the allocated memory by `hashmap_free`
 
     Normally this frees the slots, temporary storage and the HashMap struct itself. If a custom cleaning function was provided during initialisation of the hash map, it will be called for each data item stored in the hash map. An example of a custom cleaning function can be found in `hashmap.h`.
 
 - Iterate the hash map and apply a callback to the keys and data items by `hashmap_iter_apply`
 
     Iteration through the hash map continues as long as the callback keeps returning true. Callback must take two arguments: first for the key and second for the data item.
+
+- Get the current length of the hash map by `hashmap_len`
+
+    This is the count of occupied slots in the hash map.
+
+- Show internal hash map struct statistics by `hashmap_stats_summary` and `hashmap_stats_traverse`
+
+    For the former function, current total capacity, occupied slot count, the size of each slot and the load factor (occupied slots / total capacity) are printed to stdout. For the latter, the whole hash map will be traversed and metadata information for each slot is printed to stdout. Obviously, traversing is slow for large hash maps.
 
 For additional information and examples, refer to the `hashmap.h` header file.

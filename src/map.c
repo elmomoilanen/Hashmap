@@ -546,6 +546,10 @@ bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, voi
     return true;
 }
 
+u32 hmap_len(struct HashMap *hashmap) {
+    return hashmap->occ_slots;
+}
+
 u32 get_occupied_slot_count(struct HashMap *hashmap) {
     u32 const total_capacity = 1U << hashmap->ex_capa;
     u32 occupied = 0;

@@ -19,10 +19,10 @@ Memory layout: meta data (bucket) | key | user data ... | meta data | key | user
 
 A slot consists of one meta data unit, key and user data item. Hash map will have 
 N slots, 2**`MAP_INIT_EXP_CAPACITY` by default and 2**`MAP_MAX_EXP_CAPACITY` at max.
-Meta data structs are fixed to 4 bytes and key (which the end user uses to map to 
+Meta data struct size is fixed to 4 bytes and key (which the end user uses to map to 
 the data) to `MAP_MAX_KEY_BYTES` bytes.
 
-Members of the HashMap struct:
+Members of HashMap struct:
 
 ex_capa: exponent e for the power of two (2^e) which gives the total capacity.
 occ_slots: count of occupied slots.
@@ -56,6 +56,7 @@ void* hmap_get(struct HashMap *hashmap, char const *key);
 bool hmap_insert(struct HashMap *hashmap, char const *key, void const *data);
 void* hmap_remove(struct HashMap *hashmap, char const *key);
 bool hmap_iter_apply(struct HashMap *hashmap, bool (*callback)(char const *, void *));
+u32 hmap_len(struct HashMap *hashmap);
 
 void traverse_hashmap_slots(struct HashMap *hashmap);
 void hmap_show_stats(struct HashMap *hashmap);

@@ -53,6 +53,10 @@ bool hashmap_iter_apply(
     return hmap_iter_apply(hashmap, callback);
 }
 
+u32 hashmap_len(struct HashMap *hashmap) {
+    return hmap_len(hashmap);
+}
+
 void hashmap_stats_traverse(struct HashMap *hashmap) {
     traverse_hashmap_slots(hashmap);
 }

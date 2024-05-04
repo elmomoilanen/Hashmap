@@ -114,6 +114,7 @@ static void test_complete_hashmap_mid_size() {
     }
     assert(hashmap->ex_capa == 10);
     assert(hashmap->occ_slots == elems);
+    assert(hashmap_len(hashmap) == elems);
 
     // get operations
     for (i32 i=elems; i>0; --i) {
@@ -141,6 +142,7 @@ static void test_complete_hashmap_mid_size() {
         assert(hashmap_get(hashmap, key) == NULL);
     }
     assert(hashmap->occ_slots == 0);
+    assert(hashmap_len(hashmap) == 0);
     // no elements left, capacity should be now the smallest allowed
     assert(hashmap->ex_capa == MAP_INIT_EXP_CAPACITY);
 
@@ -343,8 +345,18 @@ static void test_hashmap_readme_example() {
     assert(t_18->hour == 12);
     assert(t_18->mins == 0);
 
-    assert(hashmap_remove(hashmap, "1.8.2021") != NULL);
+    f32 const updated_kelvin = 291.50;
+    t_18->kelvin = updated_kelvin;
+    assert(((Temperature *)hashmap_get(hashmap, "1.8.2021"))->kelvin - updated_kelvin < 0.01);
+
+    t_18 = hashmap_remove(hashmap, "1.8.2021");
+    assert(t_18 != NULL);
+    assert(t_18->kelvin - updated_kelvin < 0.01);
+
+    hashmap_insert(hashmap, "3.8.2021", &(Temperature){.kelvin=297.0, .hour=12, .mins=0});
+
     assert(hashmap_get(hashmap, "1.8.2021") == NULL);
+    assert(hashmap_len(hashmap) == 2);
 
     Temperature *t_28 = hashmap_get(hashmap, "2.8.2021");
     assert(t_28 != NULL);
@@ -354,6 +366,8 @@ static void test_hashmap_readme_example() {
 
     assert(hashmap_remove(hashmap, "2.8.2021") != NULL);
     assert(hashmap_get(hashmap, "2.8.2021") == NULL);
+
+    assert(hashmap_len(hashmap) == 1);
     
     hashmap_free(hashmap);
 
@@ -394,6 +408,34 @@ static void test_hashmap_two_hashmaps() {
     PRINT_SUCCESS(__func__);
 }
 
+static void test_hashmap_usage_in_word_count_algorithm() {
+    struct HashMap *hashmap = hashmap_init(sizeof(i32), NULL);
+
+    char text[] = "this is a test this is only a test";
+    char *word = strtok(text, " ");
+
+    while (word != NULL) {
+        i32 *count = hashmap_get(hashmap, word);
+        if (count == NULL) {
+            i32 initial_count = 1;
+            hashmap_insert(hashmap, word, &initial_count);
+        } else {
+            (*count)++;
+        }
+        word = strtok(NULL, " ");
+    }
+
+    assert(*(i32 *)hashmap_get(hashmap, "this") == 2);
+    assert(*(i32 *)hashmap_get(hashmap, "is") == 2);
+    assert(*(i32 *)hashmap_get(hashmap, "a") == 2);
+    assert(*(i32 *)hashmap_get(hashmap, "test") == 2);
+    assert(*(i32 *)hashmap_get(hashmap, "only") == 1);
+
+    hashmap_free(hashmap);
+
+    PRINT_SUCCESS(__func__);
+}
+
 
 test_func hashmap_tests[] = {
     {"complete_hashmap", test_complete_hashmap},
@@ -406,5 +448,6 @@ test_func hashmap_tests[] = {
     {"hashmap_iter_apply_data_mutation", test_hashmap_iter_apply_data_mutation},
     {"hashmap_readme_example", test_hashmap_readme_example},
     {"hashmap_two_hashmaps", test_hashmap_two_hashmaps},
+    {"hashmap_usage_in_word_count_algorithm", test_hashmap_usage_in_word_count_algorithm},
     {NULL, NULL},
 };
