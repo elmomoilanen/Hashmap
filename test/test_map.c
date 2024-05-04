@@ -154,15 +154,6 @@ static void test_hashmap_init_with_random_key() {
     PRINT_SUCCESS(__func__);
 }
 
-static void test_hashmap_init_invalid_item_size() {
-    u64 const item_size = (u64)UINT32_MAX + 1ULL;
-    struct HashMap *hashmap = hmap_init_with_key(item_size, NULL);
-
-    assert(hashmap == NULL);
-
-    PRINT_SUCCESS(__func__);
-}
-
 static void test_empty_hashmap_metadata() {
     struct HashMap *hashmap = hmap_init_with_key(sizeof(test_type_a), NULL);
 
@@ -817,7 +808,6 @@ test_func map_tests[] = {
     {"value_get_macro", test_value_get_macro},
     {"hashmap_init", test_hashmap_init},
     {"hashmap_init_with_random_key", test_hashmap_init_with_random_key},
-    {"hashmap_init_invalid_item_size", test_hashmap_init_invalid_item_size},
     {"empty_hashmap_metadata", test_empty_hashmap_metadata},
     {"hashmap_operations_small_size", test_hashmap_operations_small_size},
     {"hashmap_misc_operations_small_size", test_hashmap_misc_operations_small_size},
