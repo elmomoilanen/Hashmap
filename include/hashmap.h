@@ -189,9 +189,9 @@ Params:
     hashmap: HashMap struct
 
 Returns:
-    u32: count of occupied slots in the hash map
+    uint32_t: count of occupied slots in the hash map
 */
-u32 hashmap_len(struct HashMap *hashmap);
+uint32_t hashmap_len(struct HashMap *hashmap);
 
 /*
 Traverse slots of the hash map.

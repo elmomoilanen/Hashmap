@@ -53,7 +53,7 @@ bool hashmap_iter_apply(
     return hmap_iter_apply(hashmap, callback);
 }
 
-u32 hashmap_len(struct HashMap *hashmap) {
+uint32_t hashmap_len(struct HashMap *hashmap) {
     return hmap_len(hashmap);
 }
 
