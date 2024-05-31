@@ -4,9 +4,11 @@
 
 Library implementing a hash map data structure with open addressing and Robin Hood hashing as the collision resolution strategy. Strings are used as keys that are internally mapped to values through the SipHash-2-4 hashing function (see the reference C implementation [SipHash](https://github.com/veorq/SipHash) for more info). Key size is limited to 19 bytes, with the 20th byte reserved for the null character. This design choice enables a more compact memory layout for the hash map.
 
-The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for a key (as mentioned above), and x bytes for a data item. Size of a data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, like for example the maximal slot count, but they are handled by the library and should not significantly impact the user experience (see the API summary section below for more info). Also notice that this library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
+The memory layout of the hash map consists of slots, each with 4 bytes reserved for metadata, 20 bytes for a key (as mentioned above), and x bytes for a data item. Size of a data item must be specified when initializing the hash map. The number of slots, or the total capacity of the hash map, can be set by the user or left to be determined internally by the library. There are other size restrictions, like for example the maximal slot count, but they are handled by the library and should not significantly impact the user experience (see the API summary section below for more info).
 
 The memory layout for a slot is as follows: metadata (4 bytes: 1 bit for reserved flag, 11 bits for probe sequence length (PSL), and 20 bits for truncated hash value) | key (20 bytes: last byte reserved for the null character) | data item (x bytes: determined at initialization). Given the restricted maximal capacity of the hash map, 11 bits for PSL and 20 bits for hash value are sufficient.
+
+This library is not thread-safe by default and in case of multithreaded code external synchronization mechanisms should be considered.
 
 ## Build ##
 
